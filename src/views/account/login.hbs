@@ -1,0 +1,48 @@
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Đăng Nhập</h4>
+            </div>
+            <div class="card-body">
+
+                <!-- Thông báo thành công -->
+                {{#if success_msg}}
+                <div class="alert alert-success">{{success_msg}}</div>
+                {{/if}}
+
+                <!-- Thông báo lỗi -->
+                {{#if error_msg}}
+                <div class="alert alert-danger">{{error_msg}}</div>
+                {{/if}}
+
+                <form action="/auth/login" method="POST">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mật khẩu</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Đăng Nhập</button>
+                    </div>
+                </form>
+
+                <hr>
+                <!-- Google Login placeholder -->
+                 <div class="d-grid">
+                    <a href="/auth/google" class="btn btn-danger">
+                        <i class="fa-brands fa-google"></i> Đăng nhập bằng Google
+                    </a>
+                </div>
+
+            </div>
+            <div class="card-footer text-center">
+                Chưa có tài khoản? <a href="/auth/register">Đăng ký</a>
+            </div>
+        </div>
+    </div>
+</div>
