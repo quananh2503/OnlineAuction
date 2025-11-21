@@ -31,5 +31,22 @@ module.exports = {
             user.google_id || null
         ]);
         return result.rows[0];
+    },
+    async update(user) {
+        // user là object chứa { email, password, name, address, google_id }
+        const sql = `
+            UPDATE users
+            set email=$2,name=$3,address=$4,birthday=$5
+            where id = $1
+            returning *;
+        `;
+        const result = await db.query(sql, [
+            user.id,
+            user.email, 
+            user.name, 
+            user.address ,
+            user.birthday
+        ]);
+        return result.rows[0];
     }
 };

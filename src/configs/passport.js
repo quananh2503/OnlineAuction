@@ -41,10 +41,13 @@ passport.serializeUser((user, done) => {
 
 // Lấy thông tin user từ session mỗi khi tải trang
 passport.deserializeUser(async (id, done) => {
+    console.log('🔍 deserializeUser called with id:', id);
     try {
         const user = await userModel.findById(id);
+        console.log('✅ User found:', user);
         done(null, user);
     } catch (err) {
+        console.error('❌ deserializeUser error:', err);
         done(err, null);
     }
 });

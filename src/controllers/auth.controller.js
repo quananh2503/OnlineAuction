@@ -60,5 +60,58 @@ module.exports = {
             if (err) { return next(err); }
             res.redirect('/');
         });
+    },
+    getProfile(req,res){
+        // console.log('=== PROFILE DEBUG ===');
+        // console.log('req.isAuthenticated():', req.isAuthenticated());
+        console.log('req.user:', req.user);
+        // console.log('req.session:', req.session);
+        // console.log('===================');
+        
+        if (!req.isAuthenticated()) {
+            return res.redirect('/auth/login');
+        }
+        
+        // Format birthday cho input type="date"
+        const user = { ...req.user };
+        if (user.birthday) {
+            user.birthday = new Date(user.birthday).toISOString().split('T')[0];
+        }
+        
+        res.render('account/profile', { user });
+    },
+    async postProfile(req,res){
+        
+        try {
+            const  {name,email,address,birthday} = req.body
+            const id = req.user.id
+            const newUser = {
+                id ,
+                name,
+                email,
+                address,
+                birthday
+            };
+        console.log('user ne',newUser)
+        const user = await userModel.update(newUser)
+        console.log('user moi ne',user)
+        
+        // Format birthday cho input type="date"
+        if (user.birthday) {
+            user.birthday = new Date(user.birthday).toISOString().split('T')[0];
+        }
+        
+        res.render('account/profile',{
+            user,
+            success_msg:'Cập nhật thành công'
+        })
+        } catch (error) {
+            console.error('Update error:', error);
+            res.render('account/profile', {
+                user: req.user,
+                error_msg: 'update failure: ' + error.message
+            });
+        }
+       
     }
 };

@@ -1,0 +1,47 @@
+
+<div class="container flex-grow-1  d-flex justify-content-center  align-items-center ">
+    <div class="card shadow-lg border-0 rounded-lg bg-light p-4 rounded  col-lg-5">
+        <div class=" d-flex justify-content-center ">
+            <h2 class="fw-bold">Profile</h2>
+        </div>
+        
+        {{#if error_msg}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{error_msg}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{/if}}
+        
+        {{#if success_msg}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{success_msg}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{/if}}
+        
+        <form action="/auth/update" id="register-form" method="POST">
+            <div class="form-floating mb-3">
+                <input type="text" name="name" id="nameInput" placeholder="Name" class="form-control" value="{{user.name}}">
+                <label for="nameInput">Name </label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="email" name="email" id="emailInput" placeholder="example@gmail.com" class="form-control" value="{{user.email}}">
+                <label for="emailInput">Email </label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="text" name="address" class="form-control" id="addressInput" placeholder="address" value="{{user.address}}">
+                <label for="addressInput">Address </label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="date" name="birthday" class="form-control" id="birthdayInput"  value="{{user.birthday}}">
+                <label for="birthdayInput">Birthday </label>
+            </div>
+            <div class="mb-3">
+                 <button type="submit" class="btn btn-primary w-100">Update</button>
+            </div>
+             <div id="password-error" class="text-center" style="display: none; color:crimson" role="alert"></div>
+
+        </form>
+    </div>
+</div>
+
