@@ -1,48 +1,44 @@
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Đăng Nhập</h4>
-            </div>
-            <div class="card-body">
 
-                <!-- Thông báo thành công -->
-                {{#if success_msg}}
-                <div class="alert alert-success">{{success_msg}}</div>
-                {{/if}}
-
-                <!-- Thông báo lỗi -->
-                {{#if error_msg}}
-                <div class="alert alert-danger">{{error_msg}}</div>
-                {{/if}}
-
-                <form action="/auth/login" method="POST">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required autofocus>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Mật khẩu</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Đăng Nhập</button>
-                    </div>
-                </form>
-
-                <hr>
-                <!-- Google Login placeholder -->
-                 <div class="d-grid">
-                    <a href="/auth/google" class="btn btn-danger">
-                        <i class="fa-brands fa-google"></i> Đăng nhập bằng Google
-                    </a>
-                </div>
-
-            </div>
-            <div class="card-footer text-center">
-                Chưa có tài khoản? <a href="/auth/register">Đăng ký</a>
-            </div>
+<div class="container flex-grow-1  d-flex justify-content-center  align-items-center ">
+    <div class="card shadow-lg border-0 rounded-lg bg-light p-4 rounded  col-lg-5">
+        <div class=" d-flex justify-content-center ">
+            <h2 class="fw-bold">Login</h2>
         </div>
+        {{#if error_msg}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{error_msg}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{/if}}
+        <form action="/auth/login" method="POST">
+            <div class=" form-floating mb-3">
+                <input type="email" name="email" id="emailInput" placeholder="name@example.com" class="form-control" required>
+                <label for="emailInput">Email</label>
+            </div>
+            <div class=" form-floating mb-3">
+                <input type="password" name="password" id="passwordInput" placeholder="password"  class="form-control" required>
+                <label for="passwordInput" class="form-label">Password</label>
+            </div>
+            <div class=" mb-3">
+                 <button type="submit" class="btn btn-primary w-100">Login</button>
+            </div>
+            <div class =" mb-3 d-flex justify-content-center">
+                <span class=" pe-1">If you don't have an account</span>
+                <a href="/auth/register" class="">Register here</a>
+            </div>
+            <div class = "mb-3 d-flex">  
+                <hr class="flex-grow-1">
+                     <span class="mx-2 text-muted">or</span>
+                <hr class="flex-grow-1">
+            </div>  
+            <div class="row mb-3">
+                <a href="/auth/google" class="btn btn-danger w-100" role="button">
+                    <i class="fab fa-google me-2"></i> {{! Icon Google từ Font Awesome }}
+                    Tiếp tục với Google
+                 </a>
+            </div>
+
+
+        </form>
     </div>
 </div>

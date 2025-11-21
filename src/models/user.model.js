@@ -17,13 +17,19 @@ module.exports = {
 
     // 3. Thêm user mới (Dùng cho Đăng ký)
     async add(user) {
-        // user là object chứa { email, password, full_name }
+        // user là object chứa { email, password, name, address, google_id }
         const sql = `
-            INSERT INTO users (email, password, full_name, role)
-            VALUES ($1, $2, $3, 'bidder')
+            INSERT INTO users (email, password, name, address, google_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
         `;
-        const result = await db.query(sql, [user.email, user.password, user.full_name]);
+        const result = await db.query(sql, [
+            user.email, 
+            user.password, 
+            user.name, 
+            user.address || null,
+            user.google_id || null
+        ]);
         return result.rows[0];
     }
 };

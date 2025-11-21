@@ -48,5 +48,44 @@ passport.deserializeUser(async (id, done) => {
         done(err, null);
     }
 });
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+require('dotenv').config();
 
+// ... (LocalStrategy cũ vẫn giữ nguyên)
+
+// Google Strategy
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        // profile chứa thông tin user từ Google
+        const email = profile.emails[0].value;
+        
+        // Kiểm tra user đã tồn tại chưa
+        let user = await userModel.findByEmail(email);
+        
+        if (user) {
+            // User đã có trong DB -> Đăng nhập luôn
+            return done(null, user);
+        }
+        
+        // User mới -> Tạo tài khoản
+        const newUser = {
+            name: profile.displayName,
+            email: email,
+            google_id: profile.id,
+            password: null,  // Không có password vì đăng nhập Google
+            // avatar: profile.photos[0]?.value
+        };
+        
+        const userId = await userModel.add(newUser);
+        createdUser = userId;
+        
+        return done(null, createdUser);
+    } catch (err) {
+        return done(err, null);
+    }
+}));
 module.exports = passport;

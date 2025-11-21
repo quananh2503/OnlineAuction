@@ -9,10 +9,12 @@ module.exports = {
 
     // 2. Xử lý đăng ký
     async postRegister(req, res) {
-        const { full_name, email, password, confirm_password } = req.body;
+        console.log('register req.body:', req.body);
+        
+        const { name, email, password1, password2, address } = req.body;
 
         // Validate cơ bản
-        if (password !== confirm_password) {
+        if (password1 !== password2) {
             return res.render('account/register', {
                 error_msg: 'Mật khẩu xác nhận không khớp!',
                 old_values: req.body // Giữ lại giá trị cũ để user đỡ phải nhập lại
@@ -30,13 +32,14 @@ module.exports = {
 
         // Mã hóa mật khẩu
         const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(password, salt);
+        const hash = bcrypt.hashSync(password1, salt);
 
         // Lưu vào DB
         const newUser = {
-            full_name,
+            name: name,
             email,
-            password: hash
+            password: hash,
+            address
         };
         await userModel.add(newUser);
 

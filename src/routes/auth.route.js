@@ -12,6 +12,7 @@ router.get('/login', authController.getLogin);
 
 // Xử lý POST Login (Giao cho Passport lo)
 router.post('/login', (req, res, next) => {
+    console.log('Login req.body:', req.body);
     passport.authenticate('local', (err, user, info) => {
         if (err) { return next(err); }
         
@@ -32,5 +33,21 @@ router.post('/login', (req, res, next) => {
 
 // --- ĐĂNG XUẤT ---
 router.post('/logout', authController.postLogout);
+
+
+router.get('/google', 
+    passport.authenticate('google', { 
+        scope: ['profile', 'email'] 
+    })
+);
+
+// Google OAuth - Bước 2: Google redirect về đây sau khi user đồng ý
+router.get('/google/callback',
+    passport.authenticate('google', { failureRedirect: '/auth/login' }),
+    (req, res) => {
+        // Đăng nhập thành công -> Về trang chủ
+        res.redirect('/');
+    }
+);
 
 module.exports = router;
