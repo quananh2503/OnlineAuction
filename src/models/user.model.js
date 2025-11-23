@@ -17,36 +17,13 @@ module.exports = {
 
     // 3. Thêm user mới (Dùng cho Đăng ký)
     async add(user) {
-        // user là object chứa { email, password, name, address, google_id }
+        // user là object chứa { email, password, full_name }
         const sql = `
-            INSERT INTO users (email, password, name, address, google_id)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO users (email, password, full_name, role)
+            VALUES ($1, $2, $3, 'bidder')
             RETURNING *
         `;
-        const result = await db.query(sql, [
-            user.email, 
-            user.password, 
-            user.name, 
-            user.address || null,
-            user.google_id || null
-        ]);
-        return result.rows[0];
-    },
-    async update(user) {
-        // user là object chứa { email, password, name, address, google_id }
-        const sql = `
-            UPDATE users
-            set email=$2,name=$3,address=$4,birthday=$5
-            where id = $1
-            returning *;
-        `;
-        const result = await db.query(sql, [
-            user.id,
-            user.email, 
-            user.name, 
-            user.address ,
-            user.birthday
-        ]);
+        const result = await db.query(sql, [user.email, user.password, user.full_name]);
         return result.rows[0];
     }
 };

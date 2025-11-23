@@ -1,0 +1,206 @@
+/* Basic styles for homepage and product cards */
+:root {
+    --card-radius: 8px;
+    --gap: 1rem;
+}
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.home-header {
+    display: block
+}
+
+.logo {
+    min-width: 200px
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--gap)
+}
+
+.product-card {
+    border-radius: var(--card-radius);
+    overflow: hidden
+}
+
+.product-img {
+    height: 150px;
+    object-fit: cover;
+    width: 100%
+}
+
+.product-card .card-body {
+    min-height: 170px
+}
+
+.remaining-time {
+    font-weight: 500
+}
+
+/* Responsive tweaks */
+@media (max-width:768px) {
+    .product-img {
+        height: 140px
+    }
+
+    .logo {
+        font-size: 1rem
+    }
+}
+
+/* Footer small spacing */
+footer {
+    opacity: 0.9
+}
+
+/* Header search tweaks */
+.navbar .form-control {
+    min-width: 0
+}
+
+/* Category menu */
+.category-menu a {
+    color: inherit;
+    text-decoration: none
+}
+
+.category-menu ul {
+    list-style: none;
+    padding-left: 0
+}
+
+/* Navbar multi-level category dropdown: make menu wider and more spacious */
+.navbar .dropdown-menu {
+
+    /* Make header links and category labels clearly white */
+    .navbar .nav-link,
+    .navbar .dropdown-toggle,
+    .navbar .navbar-brand {
+        color: #fff !important;
+    }
+
+    /* Ensure outline-light button shows white text and subtle border */
+    .navbar .btn-outline-light {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .navbar .btn-outline-light:hover,
+    .navbar .btn-outline-light:focus {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    min-width: 340px;
+    padding: 0.5rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.navbar .dropdown-submenu {
+    position: relative;
+}
+
+.navbar .dropdown-submenu>.dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -6px;
+    display: none;
+    min-width: 240px;
+    padding: 0.4rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.navbar .dropdown-submenu:hover>.dropdown-menu,
+.navbar .dropdown-submenu:focus-within>.dropdown-menu {
+    display: block;
+}
+
+.navbar .dropdown-menu>.dropdown-submenu>a::after {
+    content: ">";
+    float: right;
+    margin-left: 8px;
+    font-weight: 600;
+    color: #888;
+    opacity: 0.8;
+    text-decoration: none;
+
+    text-decoration: none;
+    border: none;
+    background: none;
+    line-height: 1;
+    font-family: inherit;
+}
+
+
+.navbar .dropdown-menu>.dropdown-submenu:hover>a::after {
+    color: #333;
+    opacity: 1;
+}
+
+/* Sidebar 2-level hover: hide children until parent hover */
+.category-menu .children {
+    display: none;
+    margin: 0;
+    padding-left: 0.5rem;
+}
+
+.category-menu .has-children:hover>.children,
+.category-menu .has-children:focus-within>.children {
+    display: block;
+}
+
+.category-menu .has-children>a::after {
+    content: '\25B6';
+    float: right;
+    transform: rotate(90deg);
+    opacity: 0.5;
+}
+
+.category-menu .has-children:hover>a::after {
+    opacity: 0.9
+}
+
+/* make nested links slightly smaller */
+.category-menu .children a {
+    font-size: 0.95rem
+}
+
+/* Products listing specific */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem
+}
+
+.product-card {
+    display: flex;
+    flex-direction: column
+}
+
+.product-card .card-body {
+    min-height: 200px
+}
+
+.badge-new {
+    background: #ffc107;
+    color: #000;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px
+}
+
+/* Pagination small */
+.pagination .page-link {
+    min-width: 40px
+}

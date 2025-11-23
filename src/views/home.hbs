@@ -1,6 +1,53 @@
-<div class="alert alert-success" role="alert">
-  <h4 class="alert-heading">Thành công!</h4>
-  <p>Server đã chạy ổn định với cấu trúc SSR + Handlebars.</p>
-  <hr>
-  <p class="mb-0">Bây giờ bạn có thể bắt đầu code các tính năng.</p>
-</div>
+<!-- Main content: categories sidebar + three product sections -->
+<main class="row">
+  <aside class="col-md-3">
+    {{> categoryMenu}}
+  </aside>
+  <section class="col-md-9">
+    {{#if query}}
+    <section class="mb-4">
+      <h4>Kết quả tìm kiếm cho "{{query}}"</h4>
+      {{#if searchResults.length}}
+      <div class="product-grid mt-3">
+        {{#each searchResults}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+      {{else}}
+      <p class="text-muted">Không tìm thấy sản phẩm phù hợp.</p>
+      {{/if}}
+    </section>
+    {{/if}}
+
+    <section class="mb-5">
+      <h4>Top 5 - Sắp kết thúc</h4>
+      <div class="product-grid mt-3">
+        {{#each endingSoon}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <h4>Top 5 - Nhiều lượt đấu nhất</h4>
+      <div class="product-grid mt-3">
+        {{#each mostBids}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <h4>Top 5 - Giá cao nhất</h4>
+      <div class="product-grid mt-3">
+        {{#each highestPrice}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+</main>
+
+<!-- Footer supplement: marketplace info -->
+
+</section>
+</main>

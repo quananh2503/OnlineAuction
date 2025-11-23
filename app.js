@@ -2,7 +2,7 @@ const express = require('express');
 const { engine } = require('express-handlebars');
 const session = require('express-session');
 require('dotenv').config();
-require('express-async-errors'); 
+require('express-async-errors');
 
 // Import Passport config đã viết
 const passport = require('./src/configs/passport');
@@ -11,7 +11,7 @@ const app = express();
 
 // 1. Cấu hình Public & Body Parser
 app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));// middleware parse http request vào request.body
+app.use(express.urlencoded({ extended: true }));
 
 // 2. Cấu hình Session (BẮT BUỘC PHẢI CÓ TRƯỚC PASSPORT)
 app.use(session({
@@ -19,23 +19,18 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 ngày
-})); // check co cookie khong, nếu không tạo gửi request set cookie, nếu có quán vào 
-// request.session để lưu thông tin người người dùng khi load lại trang
+}));
 
 // 3. Khởi động Passport (BẮT BUỘC)
 app.use(passport.initialize());
-app.use(passport.session()); // nhin vào request.session do middleware ở trên tạo ra
-//tìm passport.user, nếu có gọi assport.deserializeUser( hàm viết trong file config) 
-// để query DB lấy thông tin đầy đủ, gán kết quản vào biết request.user
-// sau đó mọi controller nhìn vào request.user để biết user tạo ra request này là ai
-
+app.use(passport.session());
 
 // 4. Middleware Locals (Chia sẻ thông tin user xuống View)
 app.use(function (req, res, next) {
     res.locals.isAuth = req.isAuthenticated();
     res.locals.authUser = req.user;
     next();
-});// gán user vào biến result.local
+});
 
 // 5. Cấu hình View Engine
 app.engine('hbs', engine({
@@ -44,7 +39,17 @@ app.engine('hbs', engine({
     layoutsDir: 'src/views/layouts',
     partialsDir: 'src/views/partials',
     helpers: {
-        // Các helpers sau này sẽ thêm ở đây
+        eq: (a, b) => a === b,
+        ifEquals: function (a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); },
+        add: (a, b) => a + b,
+        subtract: (a, b) => a - b,
+        gt: (a, b) => a > b,
+        lt: (a, b) => a < b,
+        range: function (start, end, options) {
+            const arr = [];
+            for (let i = start; i <= end; i++) arr.push(i);
+            return arr;
+        }
     }
 }));
 app.set('view engine', 'hbs');
