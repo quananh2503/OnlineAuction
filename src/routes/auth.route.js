@@ -18,7 +18,6 @@ router.post('/login', (req, res, next) => {
 
         // Nếu lỗi (sai pass, sai email) -> quay lại trang login + thông báo
         if (!user) {
-<<<<<<< HEAD
             // Kiểm tra nếu cần verify OTP
             if (info.needVerify) {
                 return res.redirect(`/auth/verify-otp?email=${encodeURIComponent(info.email)}`);
@@ -37,26 +36,12 @@ router.post('/login', (req, res, next) => {
             const returnTo = req.session.returnTo || '/';
             delete req.session.returnTo; // Xóa sau khi dùng
             return res.redirect(returnTo);
-=======
-            return res.render('account/login', {
-                layout: 'auth',
-                title: 'Đăng nhập',
-                error_msg: info.message
-            });
-        }
-
-        // Nếu OK -> Log In và về trang chủ
-        req.logIn(user, (err) => {
-            if (err) { return next(err); }
-            return res.redirect('/');
->>>>>>> qa/dev-duy
         });
     })(req, res, next);
 });
 
 // --- ĐĂNG XUẤT ---
 router.post('/logout', authController.postLogout);
-<<<<<<< HEAD
 router.post('/update', authMiddleware.isAuthenticated, authController.postProfile)
 
 router.get('/profile', authMiddleware.isAuthenticated, authController.getProfile)
@@ -79,8 +64,6 @@ router.get('/google/callback',
         res.redirect('/');
     }
 );
-=======
->>>>>>> qa/dev-duy
 
 
 module.exports = router;

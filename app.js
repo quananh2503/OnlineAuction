@@ -39,8 +39,18 @@ app.engine('hbs', engine({
     defaultLayout: 'main',
     layoutsDir: 'src/views/layouts',
     partialsDir: 'src/views/partials',
-    helpers: {
-        // Các helpers sau này sẽ thêm ở đây
+     helpers: {
+        eq: (a, b) => a === b,
+        ifEquals: function (a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); },
+        add: (a, b) => a + b,
+        subtract: (a, b) => a - b,
+        gt: (a, b) => a > b,
+        lt: (a, b) => a < b,
+        range: function (start, end, options) {
+            const arr = [];
+            for (let i = start; i <= end; i++) arr.push(i);
+            return arr;
+        }
     }
 }));
 app.set('view engine', 'hbs');
