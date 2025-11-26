@@ -1,6 +1,28 @@
-<div class="alert alert-success" role="alert">
-  <h4 class="alert-heading">Thành công!</h4>
-  <p>Server đã chạy ổn định với cấu trúc SSR + Handlebars.</p>
-  <hr>
-  <p class="mb-0">Bây giờ bạn có thể bắt đầu code các tính năng.</p>
+<div class="p-4 mb-4 bg-light rounded-3">
+    <h1>Chào mừng đến với LapTop Shop</h1>
+    <p class="lead">Nơi bạn có thể tìm thấy những chiếc laptop tốt nhất.</p>
+</div>
+
+{{#if searchTerm}}
+    {{!-- <h3>Kết quả tìm kiếm cho: "{{searchTerm}}"</h3> --}}
+    {{!-- {{#each products}}
+      <h1>name</h1>
+    {{/each}} --}}
+{{/if}}
+
+<div class="row">
+    {{#each products}}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <img src="{{this.image_url}}" class="card-img-top" alt="{{this.name}}" style="height: 200px; object-fit: cover;">
+            <div class="card-body">
+                <h5 class="card-title">{{this.name}}</h5>
+                <p class="card-text text-danger fw-bold">{{this.price}} VNĐ</p>
+                <a href="/products/{{this.id}}" class="btn btn-primary">Xem chi tiết</a>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <p>Không tìm thấy sản phẩm nào.</p>
+    {{/each}}
 </div>

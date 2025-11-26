@@ -27,7 +27,16 @@ passport.use(new LocalStrategy({
             return done(null, false, { message: 'Mật khẩu không chính xác!' });
         }
 
-        // 5. OK -> Trả về user
+        // 5. Kiểm tra trạng thái active
+        if (user.status !== 'ACTIVE') {
+            return done(null, false, { 
+                message: 'Tài khoản chưa được kích hoạt!',
+                needVerify: true,
+                email: user.email
+            });
+        }
+
+        // 6. OK -> Trả về user
         return done(null, user);
     } catch (err) {
         return done(err);
@@ -41,13 +50,10 @@ passport.serializeUser((user, done) => {
 
 // Lấy thông tin user từ session mỗi khi tải trang
 passport.deserializeUser(async (id, done) => {
-    console.log('🔍 deserializeUser called with id:', id);
     try {
         const user = await userModel.findById(id);
-        console.log('✅ User found:', user);
         done(null, user);
     } catch (err) {
-        console.error('❌ deserializeUser error:', err);
         done(err, null);
     }
 });
@@ -69,9 +75,9 @@ passport.use(new GoogleStrategy({
         // Kiểm tra user đã tồn tại chưa
         let user = await userModel.findByEmail(email);
         
-        if (user) {
+        if (user.active =='INACTIVE' ) {
             // User đã có trong DB -> Đăng nhập luôn
-            return done(null, user);
+            // return done(null, user);
         }
         
         // User mới -> Tạo tài khoản

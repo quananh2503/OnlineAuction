@@ -1,0 +1,21 @@
+<h3>Thêm sản phẩm mới</h3>
+
+<form action="/products/create" method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="name" class="form-label">Tên sản phẩm</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label for="price" class="form-label">Giá (VNĐ)</label>
+        <input type="number" class="form-control" id="price" name="price" required>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Mô tả</label>
+        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="productImage" class="form-label">Hình ảnh sản phẩm</label>
+        <input class="form-control" type="file" id="productImage" name="productImage" accept="image/*" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Thêm sản phẩm</button>
+</form>

@@ -1,7 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const { engine } = require('express-handlebars');
 const session = require('express-session');
-require('dotenv').config();
+
 require('express-async-errors'); 
 
 // Import Passport config đã viết
@@ -35,7 +36,8 @@ app.use(function (req, res, next) {
     res.locals.isAuth = req.isAuthenticated();
     res.locals.authUser = req.user;
     next();
-});// gán user vào biến result.local
+});// gán user vào biến result.local để sau này có gọi res.render thì có thông tin user để render ra
+// muốn dispay thông tin user thì dựa vào biến res.local.user
 
 // 5. Cấu hình View Engine
 app.engine('hbs', engine({
@@ -44,10 +46,24 @@ app.engine('hbs', engine({
     layoutsDir: 'src/views/layouts',
     partialsDir: 'src/views/partials',
     helpers: {
-        // Các helpers sau này sẽ thêm ở đây
+        // Helper tạo dãy số cho pagination
+       range: function(start, end, options) { // Phải có tham số thứ 3 là options
+            let ret = '';
+            for (let i = start; i <= end; i++) {
+                // options.fn(i) sẽ chạy đoạn code HTML bên trong {{#range}}...{{/range}}
+                // và thay thế {{this}} bằng giá trị i
+                ret += options.fn(i); 
+            }
+            return ret;
+        },
+        // Helper so sánh bằng
+        eq: function(a, b) {
+            return a === b;
+        }
     }
 }));
 app.set('view engine', 'hbs');
+app.set('view cache', false); // Tắt cache cho development
 app.set('views', './src/views');
 
 // 6. ROUTES (PHẦN BẠN BỊ THIẾU)

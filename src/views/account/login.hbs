@@ -10,6 +10,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {{/if}}
+         {{#if success_msg}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{success_msg}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{/if}}
         <form action="/auth/login" method="POST">
             <div class=" form-floating mb-3">
                 <input type="email" name="email" id="emailInput" placeholder="name@example.com" class="form-control" required>
