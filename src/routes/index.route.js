@@ -10,7 +10,7 @@ router.get('/search',productController.searchProduct)
 router.use('/products',productRouter)
 
 // // Gắn các route con
-// router.use('/auth', authRouter); // Đường dẫn sẽ là /auth/login, /auth/register
-// router.use('/products', productRouter); // Đường dẫn sẽ là /products/feed
+router.use('/auth', authRouter); // Đường dẫn sẽ là /auth/login, /auth/register
+router.use('/products', productRouter); // Đường dẫn sẽ là /products/feed
 
 module.exports = router;
