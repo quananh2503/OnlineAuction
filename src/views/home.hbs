@@ -1,28 +1,53 @@
-<div class="p-4 mb-4 bg-light rounded-3">
-    <h1>Chào mừng đến với LapTop Shop</h1>
-    <p class="lead">Nơi bạn có thể tìm thấy những chiếc laptop tốt nhất.</p>
-</div>
+<!-- Main content: categories sidebar + three product sections -->
+<main class="row">
+  <aside class="col-md-3">
+    {{> categoryMenu}}
+  </aside>
+  <section class="col-md-9">
+    {{#if query}}
+    <section class="mb-4">
+      <h4>Kết quả tìm kiếm cho "{{query}}"</h4>
+      {{#if searchResults.length}}
+      <div class="product-grid mt-3">
+        {{#each searchResults}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+      {{else}}
+      <p class="text-muted">Không tìm thấy sản phẩm phù hợp.</p>
+      {{/if}}
+    </section>
+    {{/if}}
 
-{{#if searchTerm}}
-    {{!-- <h3>Kết quả tìm kiếm cho: "{{searchTerm}}"</h3> --}}
-    {{!-- {{#each products}}
-      <h1>name</h1>
-    {{/each}} --}}
-{{/if}}
+    <section class="mb-5">
+      <h4>Top 5 - Sắp kết thúc</h4>
+      <div class="product-grid mt-3">
+        {{#each endingSoon}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
 
-<div class="row">
-    {{#each products}}
-    <div class="col-md-4 mb-4">
-        <div class="card">
-            <img src="{{this.image_url}}" class="card-img-top" alt="{{this.name}}" style="height: 200px; object-fit: cover;">
-            <div class="card-body">
-                <h5 class="card-title">{{this.name}}</h5>
-                <p class="card-text text-danger fw-bold">{{this.price}} VNĐ</p>
-                <a href="/products/{{this.id}}" class="btn btn-primary">Xem chi tiết</a>
-            </div>
-        </div>
-    </div>
-    {{else}}
-    <p>Không tìm thấy sản phẩm nào.</p>
-    {{/each}}
-</div>
+    <section class="mb-5">
+      <h4>Top 5 - Nhiều lượt đấu nhất</h4>
+      <div class="product-grid mt-3">
+        {{#each mostBids}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <h4>Top 5 - Giá cao nhất</h4>
+      <div class="product-grid mt-3">
+        {{#each highestPrice}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+</main>
+
+<!-- Footer supplement: marketplace info -->
+
+</section>
+</main>

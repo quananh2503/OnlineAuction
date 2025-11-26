@@ -12,7 +12,7 @@ const app = express();
 
 // 1. Cấu hình Public & Body Parser
 app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));// middleware parse http request vào request.body
+app.use(express.urlencoded({ extended: true }));
 
 // 2. Cấu hình Session (BẮT BUỘC PHẢI CÓ TRƯỚC PASSPORT)
 app.use(session({
@@ -20,24 +20,18 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 ngày
-})); // check co cookie khong, nếu không tạo gửi request set cookie, nếu có quán vào 
-// request.session để lưu thông tin người người dùng khi load lại trang
+}));
 
 // 3. Khởi động Passport (BẮT BUỘC)
 app.use(passport.initialize());
-app.use(passport.session()); // nhin vào request.session do middleware ở trên tạo ra
-//tìm passport.user, nếu có gọi assport.deserializeUser( hàm viết trong file config) 
-// để query DB lấy thông tin đầy đủ, gán kết quản vào biết request.user
-// sau đó mọi controller nhìn vào request.user để biết user tạo ra request này là ai
-
+app.use(passport.session());
 
 // 4. Middleware Locals (Chia sẻ thông tin user xuống View)
 app.use(function (req, res, next) {
     res.locals.isAuth = req.isAuthenticated();
     res.locals.authUser = req.user;
     next();
-});// gán user vào biến result.local để sau này có gọi res.render thì có thông tin user để render ra
-// muốn dispay thông tin user thì dựa vào biến res.local.user
+});// gán user vào biến result.local
 
 // 5. Cấu hình View Engine
 app.engine('hbs', engine({
@@ -46,20 +40,7 @@ app.engine('hbs', engine({
     layoutsDir: 'src/views/layouts',
     partialsDir: 'src/views/partials',
     helpers: {
-        // Helper tạo dãy số cho pagination
-       range: function(start, end, options) { // Phải có tham số thứ 3 là options
-            let ret = '';
-            for (let i = start; i <= end; i++) {
-                // options.fn(i) sẽ chạy đoạn code HTML bên trong {{#range}}...{{/range}}
-                // và thay thế {{this}} bằng giá trị i
-                ret += options.fn(i); 
-            }
-            return ret;
-        },
-        // Helper so sánh bằng
-        eq: function(a, b) {
-            return a === b;
-        }
+        // Các helpers sau này sẽ thêm ở đây
     }
 }));
 app.set('view engine', 'hbs');

@@ -1,10 +1,9 @@
-
 <div class="container flex-grow-1  d-flex justify-content-center  align-items-center ">
     <div class="card shadow-lg border-0 rounded-lg bg-light p-4 rounded  col-lg-5">
         <div class=" d-flex justify-content-center ">
             <h2 class="fw-bold">Register</h2>
         </div>
-        
+
         {{#if error_msg}}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{error_msg}}
@@ -17,10 +16,17 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {{/if}}
-        
+        {{#if success_msg}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{success_msg}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{/if}}
+
         <form action="/auth/register" id="register-form" method="POST">
             <div class="form-floating mb-3">
-                <input type="text" name="name" id="nameInput" placeholder="Name" class="form-control" value="{{old_values.name}}">
+                <input type="text" name="name" id="nameInput" placeholder="Name" class="form-control"
+                    value="{{old_values.name}}">
                 <label for="nameInput">Name </label>
             </div>
             <div class="form-floating mb-3">
@@ -28,38 +34,40 @@
                 <label for="passwordInput" class="form-label">Password</label>
             </div>
             <div class="form-floating mb-3">
-                <input type="password" name="password2" id="confirmPasswordInput" placeholder="password confirm" class="form-control">
+                <input type="password" name="password2" id="confirmPasswordInput" placeholder="password confirm"
+                    class="form-control">
                 <label for="confirmPasswordInput" class="form-label">Confirm Password</label>
             </div>
 
             <div class="form-floating mb-3">
-                <input type="email" name="email" id="emailInput" placeholder="example@gmail.com" class="form-control" value="{{old_values.email}}">
+                <input type="email" name="email" id="emailInput" placeholder="example@gmail.com" class="form-control"
+                    value="{{old_values.email}}">
                 <label for="emailInput">Email </label>
             </div>
             <div class="form-floating mb-3">
-                <input type="text" name="address" class="form-control" id="addressInput" placeholder="address" value="{{old_values.address}}">
+                <input type="text" name="address" class="form-control" id="addressInput" placeholder="address"
+                    value="{{old_values.address}}">
                 <label for="addressInput">Address </label>
             </div>
             <div class="mb-3">
-                 <button type="submit" class="btn btn-primary w-100">Register</button>
+                <button type="submit" class="btn btn-primary w-100">Register</button>
             </div>
-             <div id="password-error" class="text-center" style="display: none; color:crimson" role="alert"></div>
-            <div class =" mb-3 d-flex justify-content-center">
+            <div id="password-error" class="text-center" style="display: none; color:crimson" role="alert"></div>
+            <div class=" mb-3 d-flex justify-content-center">
                 <span class=" pe-1">If you already have an account</span>
                 <a href="/auth/login" class="">Login here</a>
             </div>
-            <div class = "mb-3 d-flex">  
+            <div class="mb-3 d-flex">
                 <hr class="flex-grow-1">
-                     <span class="mx-2 text-muted">or</span>
+                <span class="mx-2 text-muted">or</span>
                 <hr class="flex-grow-1">
-            </div>  
+            </div>
             <div class="mb-3">
                 <a href="/auth/google" class="btn btn-danger w-100" role="button">
-                    <i class="fab fa-google me-2"></i> 
+                    <i class="fab fa-google me-2"></i>
                     Continue with Google
-                 </a>
+                </a>
             </div>
         </form>
     </div>
 </div>
-

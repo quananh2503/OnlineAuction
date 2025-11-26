@@ -17,7 +17,7 @@ module.exports = {
 
     // 3. Thêm user mới (Dùng cho Đăng ký)
     async add(user) {
-        // user là object chứa { email, password, name, address, google_id }
+        // user là object chứa { email, password, full_name }
         const sql = `
             INSERT INTO users (email, password, name, address, google_id,otp)
             VALUES ($1, $2, $3, $4, $5,$6)
@@ -28,8 +28,7 @@ module.exports = {
             user.password, 
             user.name, 
             user.address || null,
-            user.google_id || null,
-            user.otp
+            user.google_id || null
         ]);
         return result.rows[0];
     },
@@ -49,58 +48,5 @@ module.exports = {
             user.birthday
         ]);
         return result.rows[0];
-    },
-    async updatePassword(userId,hash) {
-        // user là object chứa { email, password, name, address, google_id }
-        const sql = `
-            UPDATE users
-            set password = $2
-            where id = $1
-            returning *;
-        `;
-        const result = await db.query(sql, [
-            userId,
-            hash
-        ]);
-        return result.rows[0];
-    },
-    async updateOTP(email, otp){
-         const sql = `
-            UPDATE users
-            set otp = $2
-            where email = $1
-            returning *;
-        `;
-        const result = await db.query(sql, [
-            email,
-            otp
-        ]);
-        return result.rows[0];       
-    },
-    async checkOTP(email, otp){
-         const sql = `
-            select exists(
-                select 1
-                from users
-                where email = $1 and otp = $2
-            )
-        `;
-        const result = await db.query(sql, [
-            email,
-            otp
-        ]);
-        return result.rows[0];       
-    },
-    async active(email){
-        const sql = `
-            update users
-            set status='ACTIVE'
-            where email = $1
-            returning *;
-        `;
-        const result = await db.query(sql, [
-            email
-        ]);
-        return result.rows[0]; 
     }
 };

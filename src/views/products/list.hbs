@@ -1,0 +1,65 @@
+<div class="row">
+    <aside class="col-md-3">
+        {{> categoryMenu}}
+    </aside>
+    <div class="col-md-9">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <form class="d-flex" action="/products" method="GET">
+                    <input type="hidden" name="category" value="{{category}}">
+                    <input name="q" value="{{q}}" class="form-control me-2" placeholder="Tìm trong danh mục...">
+                    <button class="btn btn-outline-secondary" type="submit"><i class="fa fa-search"></i></button>
+                </form>
+            </div>
+            <div class="d-flex align-items-center">
+                <label class="me-2">Sắp xếp</label>
+                <select id="sortSel" class="form-select form-select-sm" onchange="location = this.value">
+                    <option value="/products?q={{q}}&category={{category}}&sort=end_desc" {{#if (eq sort 'end_desc'
+                        )}}selected{{/if}}>Thời gian kết thúc (gần nhất)</option>
+                    <option value="/products?q={{q}}&category={{category}}&sort=price_asc" {{#if (eq sort 'price_asc'
+                        )}}selected{{/if}}>Giá tăng dần</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="product-grid">
+            {{#each products}}
+            <article class="card product-card">
+                <img src="{{image}}" class="card-img-top product-img" alt="{{title}}">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{title}}</h5>
+                    <p class="mb-1 text-muted small">Người bán: {{seller.name}}</p>
+                    <p class="mb-1"><strong>{{currentPriceFormatted}}₫</strong></p>
+                    {{#if buyNowPrice}}<p class="mb-1 text-success small">Mua ngay: {{buyNowPrice}}₫</p>{{/if}}
+                    <p class="mb-1 small text-secondary">Đăng: {{createdAt}}</p>
+                    <p class="mb-1 small">Thời gian còn lại: <strong>{{remainingText}}</strong></p>
+                    <p class="mb-2 small">Lượt đấu: <strong>{{bidsCount}}</strong></p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <a class="btn btn-sm btn-outline-primary" href="/products/{{id}}">Xem chi tiết</a>
+                        {{#if isNew}}<span class="badge bg-warning text-dark">Mới</span>{{/if}}
+                    </div>
+                </div>
+            </article>
+            {{/each}}
+        </div>
+
+        <!-- Pagination -->
+        <nav class="mt-4" aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {{#if (gt page 1)}}
+                <li class="page-item"><a class="page-link"
+                        href="/products?page={{subtract page 1}}&q={{q}}&category={{category}}&sort={{sort}}">«</a></li>
+                {{/if}}
+                {{#each (range 1 totalPages)}}
+                <li class="page-item {{#ifEquals this ../page}}active{{/ifEquals}}"><a class="page-link"
+                        href="/products?page={{this}}&q={{../q}}&category={{../category}}&sort={{../sort}}">{{this}}</a>
+                </li>
+                {{/each}}
+                {{#if (lt page totalPages)}}
+                <li class="page-item"><a class="page-link"
+                        href="/products?page={{add page 1}}&q={{q}}&category={{category}}&sort={{sort}}">»</a></li>
+                {{/if}}
+            </ul>
+        </nav>
+    </div>
+</div>
