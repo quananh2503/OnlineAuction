@@ -1,68 +1,29 @@
 <div class="card mb-4">
-    <div class="card-header bg-light fw-bold">Hệ thống Menu</div>
+    <div class="card-header bg-light fw-bold">Danh mục sản phẩm</div>
     <ul class="list-group list-group-flush category-menu">
-        <!-- Điện tử -->
-        <li class="list-group-item has-children">
-            <a href="/products?category=electronics" class="d-block fw-semibold">Điện tử</a>
-            <ul class="children list-unstyled ms-3 mt-2">
-                <li><a href="/products?category=electronics-phones" class="d-block">Điện thoại di động</a></li>
-                <li><a href="/products?category=electronics-laptops" class="d-block">Máy tính xách tay</a></li>
-                <li><a href="/products?category=electronics-headphones" class="d-block">Tai nghe</a></li>
-                <li><a href="/products?category=electronics-monitors" class="d-block">Màn hình</a></li>
-                <li><a href="/products?category=electronics-tvs" class="d-block">Tivi</a></li>
-                <li><a href="/products?category=electronics-accessories" class="d-block">Phụ kiện</a></li>
-            </ul>
-        </li>
-
-        <!-- Thời trang -->
-        <li class="list-group-item has-children">
-            <a href="/products?category=fashion" class="d-block fw-semibold">Thời trang</a>
-            <ul class="children list-unstyled ms-3 mt-2">
-                <li><a href="/products?category=fashion-shoes" class="d-block">Giày</a></li>
-                <li><a href="/products?category=fashion-watches" class="d-block">Đồng hồ</a></li>
-                <li><a href="/products?category=fashion-bags" class="d-block">Túi xách & Phụ kiện</a></li>
-                <li><a href="/products?category=fashion-clothing" class="d-block">Quần áo</a></li>
-            </ul>
-        </li>
-
-        <!-- Nhà sách -->
-        <li class="list-group-item has-children">
-            <a href="/products?category=books" class="d-block fw-semibold">Nhà sách</a>
-            <ul class="children list-unstyled ms-3 mt-2">
-                <li><a href="/products?category=books-fiction" class="d-block">Tiểu thuyết</a></li>
-                <li><a href="/products?category=books-education" class="d-block">Sách học & Giáo trình</a></li>
-                <li><a href="/products?category=books-comics" class="d-block">Truyện tranh</a></li>
-            </ul>
-        </li>
-
-        <!-- Đời sống & Du lịch -->
-        <li class="list-group-item has-children">
-            <a href="/products?category=lifestyle" class="d-block fw-semibold">Đời sống & Du lịch</a>
-            <ul class="children list-unstyled ms-3 mt-2">
-                <li><a href="/products?category=lifestyle-travel" class="d-block">Du lịch</a></li>
-                <li><a href="/products?category=lifestyle-home" class="d-block">Đời sống & Nội thất</a></li>
-                <li><a href="/products?category=lifestyle-kitchen" class="d-block">Đồ gia dụng & Nhà bếp</a></li>
-            </ul>
-        </li>
-
-        <!-- Ô tô & Xe máy -->
-        <li class="list-group-item has-children">
-            <a href="/products?category=auto" class="d-block fw-semibold">Ô tô & Xe máy</a>
-            <ul class="children list-unstyled ms-3 mt-2">
-                <li><a href="/products?category=auto-cars" class="d-block">Xe ô tô</a></li>
-                <li><a href="/products?category=auto-motorcycles" class="d-block">Xe máy</a></li>
-                <li><a href="/products?category=auto-parts" class="d-block">Phụ tùng & Phụ kiện</a></li>
-            </ul>
-        </li>
-
-        <!-- Thêm một số category khác -->
-        <li class="list-group-item has-children">
-            <a href="/products?category=beauty" class="d-block fw-semibold">Sắc đẹp & Sức khỏe</a>
-            <ul class="children list-unstyled ms-3 mt-2">
-                <li><a href="/products?category=beauty-skincare" class="d-block">Chăm sóc da</a></li>
-                <li><a href="/products?category=beauty-makeup" class="d-block">Trang điểm</a></li>
-            </ul>
-        </li>
-
+        {{#each categories}}
+            <li class="list-group-item {{#if this.children.length}}has-children{{/if}}">
+                <a href="/products?category={{this.id}}" class="d-block fw-semibold">
+                   {{this.name}}
+                </a>
+                
+                {{#if this.children.length}}
+                <ul class="children list-unstyled ms-3 mt-2">
+                    {{#each this.children}}
+                    <li>
+                        <a href="/products?category={{this.id}}" class="d-block">
+                           {{this.name}}
+                        </a>
+                    </li>
+                    {{/each}}
+                </ul>
+                {{/if}}
+            </li>
+        {{else}}
+            <li class="list-group-item text-center text-muted py-3">
+                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                Chưa có danh mục
+            </li>
+        {{/each}}
     </ul>
 </div>

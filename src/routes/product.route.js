@@ -9,51 +9,103 @@ const productModel = require("../models/product.model")
 // router.get('/feed', productController.getFeed);
 
 // Route cụ thể trước, route động sau
-router.get('/create', async(req,res) => {
-    res.render('product/create-product')
-})
-router.post('/create', upload.single('productImage'), async (req, res) => {
+router.get('/create', productController.getCreateProduct);
+router.post('/create', upload.fields([
+    { name: 'avatarImage', maxCount: 1 },
+    { name: 'descriptionImages', maxCount: 10 }
+]), async (req, res) => {
     try {
-        // Dữ liệu text từ form sẽ nằm trong req.body
-        const { name, price, description } = req.body;
+        // Dữ liệu text từ form
+        const { 
+            name, 
+            category_id, 
+            description, 
+            starts_at, 
+            ends_at, 
+            starting_price, 
+            price_step, 
+            buy_now_price 
+        } = req.body;
 
-        // Dữ liệu file sau khi qua multer sẽ nằm trong req.file
-        if (!req.file) {
-            return res.status(400).send('Vui lòng chọn một file ảnh.');
+        // Validate files
+        if (!req.files || !req.files.avatarImage || !req.files.descriptionImages) {
+            return res.status(400).send('Vui lòng chọn đầy đủ ảnh (1 avatar + ít nhất 3 ảnh mô tả).');
         }
 
-        // Tạo một tên file duy nhất để tránh trùng lặp
-        const fileName = `${Date.now()}-${req.file.originalname}`;
-        const bucketName = 'productimages'; // Tên bucket bạn đã tạo
-
-        // Upload file lên Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-            .from(bucketName)
-            .upload(fileName, req.file.buffer, {
-                contentType: req.file.mimetype
-            });
-
-        if (uploadError) {
-            throw uploadError;
+        if (req.files.descriptionImages.length < 3) {
+            return res.status(400).send('Vui lòng chọn ít nhất 3 ảnh mô tả sản phẩm.');
         }
 
-        // Lấy URL công khai của file vừa upload
-        const { data: urlData } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(fileName);
+        const bucketName = 'productimages';
+        const avatarFile = req.files.avatarImage[0];
+        const descriptionFiles = req.files.descriptionImages;
 
-        const publicUrl = urlData.publicUrl;
-
-        // Lưu thông tin sản phẩm (bao gồm cả image_url) vào database
-        const newProduct = {
-            name,
-            price: parseInt(price, 10),
-            description,
-            image_url: publicUrl // Lưu đường dẫn ảnh
+        // Helper function: Sanitize filename
+        const sanitizeFilename = (filename) => {
+            // Lấy extension
+            const ext = filename.substring(filename.lastIndexOf('.'));
+            // Loại bỏ extension, chuyển thành slug
+            const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
+            const sanitized = nameWithoutExt
+                .normalize('NFD') // Tách dấu tiếng Việt
+                .replace(/[\u0300-\u036f]/g, '') // Xóa dấu
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-') // Thay ký tự đặc biệt bằng -
+                .replace(/^-+|-+$/g, ''); // Xóa - ở đầu/cuối
+            return sanitized + ext;
         };
 
-        // Giả sử bạn có hàm create trong model
-        await productModel.create(newProduct);
+        // Upload avatar
+        const avatarFileName = `avatar-${Date.now()}-${sanitizeFilename(avatarFile.originalname)}`;
+        const { error: avatarError } = await supabase.storage
+            .from(bucketName)
+            .upload(avatarFileName, avatarFile.buffer, {
+                contentType: avatarFile.mimetype
+            });
+
+        if (avatarError) throw avatarError;
+
+        const { data: avatarUrlData } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(avatarFileName);
+
+        // Upload description images
+        const descriptionUrls = [];
+        for (let i = 0; i < descriptionFiles.length; i++) {
+            const file = descriptionFiles[i];
+            const fileName = `desc-${Date.now()}-${i}-${sanitizeFilename(file.originalname)}`;
+            
+            const { error: uploadError } = await supabase.storage
+                .from(bucketName)
+                .upload(fileName, file.buffer, {
+                    contentType: file.mimetype
+                });
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabase.storage
+                .from(bucketName)
+                .getPublicUrl(fileName);
+            
+            descriptionUrls.push(urlData.publicUrl);
+        }
+
+        // Lưu vào database
+        const productData = {
+            seller_id: req.user?.id || 10, // TODO: Cần middleware auth, tạm dùng 1
+            category_id: parseInt(category_id),
+            name: name.trim(),
+            description: description?.trim() || null,
+            starts_at: starts_at,
+            ends_at: ends_at,
+            starting_price: parseFloat(starting_price),
+            price_step: parseFloat(price_step),
+            buy_now_price: buy_now_price ? parseFloat(buy_now_price) : null,
+            avatar_url: avatarUrlData.publicUrl,
+            image_urls: descriptionUrls
+        };
+
+        await productModel.create(productData);
         
         // Chuyển hướng về trang chủ sau khi thêm thành công
         res.redirect('/');

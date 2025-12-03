@@ -2,10 +2,32 @@ const db = require('../configs/db');
 
 module.exports = {
     async listAllProducts(){
-        const sql = `SELECT * FROM products `;
+        const sql = `
+        SELECT 
+            products.id, 
+            products.seller_id, 
+            u.name as seller_name, 
+            products.category_id, 
+            c.name as category_name, 
+            products.name, 
+            products.starts_at, 
+            products.ends_at, 
+            products.starting_price, 
+            products.price_step, 
+            products.buy_now_price, 
+            products.avatar_url, 
+            products.current_price, 
+            products.status,
+            products.bid_count
+        FROM products 
+        JOIN categories c ON products.category_id = c.id
+        JOIN users u ON products.seller_id = u.id
+        `;
         const result = await db.query(sql);
         return result.rows
     },
+
+
     async getProductById(id){
         const sql = `SELECT * FROM products WHERE id = $1`;
         const result = await db.query(sql,[id]);
@@ -22,19 +44,76 @@ module.exports = {
         const result = await db.query(sql, [searchTerm]);
         return result.rows;
     },
-    async create(product){
-        const sql = `
-            INSERT INTO products (name, description, price, image_url)
-            VALUES ($1, $2, $3, $4)
-            RETURNING *
-        `;
-        const result = await db.query(sql, [
-            product.name,
-            product.description,
-            product.price,
-            product.image_url
-        ]);
-        return result.rows[0];
+    async create(productData) {
+        const client = await db.getClient();
+        
+        try {
+            await client.query('BEGIN');
+
+            // 1. Insert product
+            const productSql = `
+                INSERT INTO products (
+                    seller_id, category_id, name,
+                    starts_at, ends_at, 
+                    starting_price, price_step, buy_now_price,
+                    avatar_url, current_price, status
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ACTIVE')
+                RETURNING *
+            `;
+            
+            const productResult = await client.query(productSql, [
+                productData.seller_id,
+                productData.category_id,
+                productData.name,
+                productData.starts_at,
+                productData.ends_at,
+                productData.starting_price,
+                productData.price_step,
+                productData.buy_now_price || null,
+                productData.avatar_url,
+                productData.starting_price // current_price = starting_price
+            ]);
+
+            const product = productResult.rows[0];
+
+            // 2. Insert description vào bảng descriptions
+            if (productData.description) {
+                const descriptionSql = `
+                    INSERT INTO descriptions (product_id, content)
+                    VALUES ($1, $2)
+                `;
+                await client.query(descriptionSql, [product.id, productData.description]);
+            }
+
+            // 3. Insert avatar image vào bảng images
+            const avatarImageSql = `
+                INSERT INTO images (product_id, url, type)
+                VALUES ($1, $2, 'AVATAR')
+            `;
+            await client.query(avatarImageSql, [product.id, productData.avatar_url]);
+
+            // 3. Insert description images
+            if (productData.image_urls && productData.image_urls.length > 0) {
+                const imageSql = `
+                    INSERT INTO images (product_id, url, type)
+                    VALUES ($1, $2, 'SECONDARY')
+                `;
+                
+                for (const imageUrl of productData.image_urls) {
+                    await client.query(imageSql, [product.id, imageUrl]);
+                }
+            }
+
+            await client.query('COMMIT');
+            return product;
+
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     }
     // // 1. Tìm user bằng email (Dùng cho Đăng nhập & check trùng email)
     // async findByEmail(email) {

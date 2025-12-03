@@ -18,5 +18,24 @@ module.exports = {
         
         // Đã đăng nhập rồi -> Về trang chủ
         res.redirect('/');
+    },
+
+    // Middleware kiểm tra quyền admin
+    isAdmin(req, res, next) {
+        if (!req.isAuthenticated()) {
+            req.session.returnTo = req.originalUrl;
+            return res.redirect('/auth/login');
+        }
+
+        // Kiểm tra role admin (giả sử có trường role trong user)
+        // TODO: Cập nhật DB users table thêm column 'role'
+        if (req.user && req.user.role === 'admin') {
+            return next();
+        }
+
+        // Không có quyền admin
+        res.status(403).render('403', {
+            message: 'Bạn không có quyền truy cập trang này!'
+        });
     }
 };

@@ -23,6 +23,7 @@ router.post('/login', (req, res, next) => {
                 return res.redirect(`/auth/verify-otp?email=${encodeURIComponent(info.email)}`);
             }
             return res.render('account/login', { 
+                layout: 'auth',
                 error_msg: info.message 
             });
         }
@@ -41,7 +42,7 @@ router.post('/login', (req, res, next) => {
 });
 
 // --- ĐĂNG XUẤT ---
-router.post('/logout', authController.postLogout);
+router.post('/logout', authController.postLogout  );
 router.post('/update', authMiddleware.isAuthenticated, authController.postProfile)
 
 router.get('/profile', authMiddleware.isAuthenticated, authController.getProfile)

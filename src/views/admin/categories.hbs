@@ -1,0 +1,256 @@
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-folder-tree me-2"></i>Quản lý danh mục sản phẩm</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="fas fa-plus me-2"></i>Thêm danh mục
+                </button>
+            </div>
+
+            {{! Alert messages }}
+            {{#if success_msg}}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>{{success_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+            
+            {{#if error_msg}}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+
+            {{! Categories Table }}
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="50">ID</th>
+                                    <th>Tên danh mục</th>
+                                    <th>Cấp</th>
+                                    <th>Danh mục cha</th>
+                                    <th width="150" class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each categories}}
+                                    {{! Category cấp 1 }}
+                                    <tr class="table-primary fw-bold">
+                                        <td>{{this.id}}</td>
+                                        <td>
+                                            <i class="fas fa-folder me-2"></i>{{this.name}}
+                                        </td>
+                                        <td><span class="badge bg-primary">Cấp 1</span></td>
+                                        <td>-</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-warning me-1" 
+                                                    onclick="editCategory({{this.id}}, '{{this.name}}', null)"
+                                                    title="Sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" 
+                                                    onclick="confirmDelete({{this.id}}, '{{this.name}}')"
+                                                    title="Xóa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    
+                                    {{! Categories cấp 2 (con) }}
+                                    {{#each this.children}}
+                                    <tr>
+                                        <td>{{this.id}}</td>
+                                        <td class="ps-4">
+                                            <i class="fas fa-arrow-right me-2 text-muted"></i>
+                                            <i class="fas fa-file me-2"></i>{{this.name}}
+                                        </td>
+                                        <td><span class="badge bg-secondary">Cấp 2</span></td>
+                                        <td>{{../this.name}}</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-warning me-1" 
+                                                    onclick="editCategory({{this.id}}, '{{this.name}}', {{this.parent_id}})"
+                                                    title="Sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" 
+                                                    onclick="confirmDelete({{this.id}}, '{{this.name}}')"
+                                                    title="Xóa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {{/each}}
+                                {{/each}}
+                                
+                                {{#unless categories}}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                        Chưa có danh mục nào. Hãy thêm danh mục mới!
+                                    </td>
+                                </tr>
+                                {{/unless}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{! Modal: Thêm danh mục }}
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/admin/categories" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Thêm danh mục mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addCategoryName" class="form-label fw-bold">
+                            Tên danh mục <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="addCategoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addParentId" class="form-label fw-bold">
+                            Danh mục cha (Cấp 1)
+                        </label>
+                        <select class="form-select" id="addParentId" name="parent_id">
+                            <option value="">-- Không có (Danh mục cấp 1) --</option>
+                            {{#each categories}}
+                            <option value="{{this.id}}">{{this.name}}</option>
+                            {{/each}}
+                        </select>
+                        <small class="text-muted">Để trống nếu đây là danh mục cấp 1</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Thêm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{! Modal: Sửa danh mục }}
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editCategoryForm" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Sửa danh mục</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editCategoryName" class="form-label fw-bold">
+                            Tên danh mục <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="editCategoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editParentId" class="form-label fw-bold">
+                            Danh mục cha (Cấp 1)
+                        </label>
+                        <select class="form-select" id="editParentId" name="parent_id">
+                            <option value="">-- Không có (Danh mục cấp 1) --</option>
+                            {{#each categories}}
+                            <option value="{{this.id}}">{{this.name}}</option>
+                            {{/each}}
+                        </select>
+                        <small class="text-muted">Để trống nếu đây là danh mục cấp 1</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>Cập nhật
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{! Modal: Xác nhận xóa }}
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="deleteCategoryForm" method="POST">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Bạn có chắc chắn muốn xóa danh mục <strong id="deleteCategoryName"></strong>?</p>
+                    <p class="text-danger mb-0 mt-2">
+                        <i class="fas fa-info-circle me-1"></i>Hành động này không thể hoàn tác!
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Xóa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Hàm mở modal sửa category
+function editCategory(id, name, parentId) {
+    document.getElementById('editCategoryName').value = name;
+    document.getElementById('editParentId').value = parentId || '';
+    document.getElementById('editCategoryForm').action = `/admin/categories/${id}/update`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    modal.show();
+}
+
+// Hàm mở modal xác nhận xóa
+function confirmDelete(id, name) {
+    document.getElementById('deleteCategoryName').textContent = name;
+    document.getElementById('deleteCategoryForm').action = `/admin/categories/${id}/delete`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
+    modal.show();
+}
+
+// Auto hide alerts sau 5 giây
+setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        const bsAlert = new bootstrap.Alert(alert);
+        bsAlert.close();
+    });
+}, 5000);
+</script>
+
+<style>
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+}
+</style>

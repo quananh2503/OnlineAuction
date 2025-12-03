@@ -75,24 +75,29 @@ passport.use(new GoogleStrategy({
         // Kiểm tra user đã tồn tại chưa
         let user = await userModel.findByEmail(email);
         
-        if (user.active =='INACTIVE' ) {
-            // User đã có trong DB -> Đăng nhập luôn
-            // return done(null, user);
+        if (user) {
+            // User ĐÃ TỒN TẠI
+            if (user.status === 'INACTIVE') {
+                // Nếu inactive → active luôn
+                await userModel.active(email);
+                user.status = 'ACTIVE';
+            }
+            // Đăng nhập với user hiện có
+            return done(null, user);
         }
         
-        // User mới -> Tạo tài khoản
+        // User CHƯA TỒN TẠI → Tạo mới
         const newUser = {
             name: profile.displayName,
             email: email,
             google_id: profile.id,
-            password: null,  // Không có password vì đăng nhập Google
-            // avatar: profile.photos[0]?.value
+            password: null,
+            status: 'ACTIVE'
         };
         
-        const userId = await userModel.add(newUser);
-        createdUser = userId;
+        const createdUser = await userModel.add(newUser);
         
-        return done(null, createdUser);
+        return done(null, createdUser.id);
     } catch (err) {
         return done(err, null);
     }

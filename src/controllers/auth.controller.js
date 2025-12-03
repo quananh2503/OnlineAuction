@@ -6,7 +6,7 @@ const crypto = require('crypto'); // Thư viện sẵn có của Node.js
 module.exports = {
     // 1. Hiển thị form đăng ký
     getRegister(req, res) {
-        res.render('account/register');
+        res.render('account/register', { layout: 'auth' });
     },
 
     // 2. Xử lý đăng ký
@@ -18,6 +18,7 @@ module.exports = {
         // Validate cơ bản
         if (password1 !== password2) {
             return res.render('account/register', {
+                layout: 'auth',
                 error_msg: 'Mật khẩu xác nhận không khớp!',
                 old_values: req.body // Giữ lại giá trị cũ để user đỡ phải nhập lại
             });
@@ -27,6 +28,7 @@ module.exports = {
         const user = await userModel.findByEmail(email);
         if (user) {
             return res.render('account/register', {
+                layout: 'auth',
                 error_msg: 'Email này đã được sử dụng!',
                 old_values: req.body
             });
@@ -51,6 +53,7 @@ module.exports = {
         // Thành công -> Chuyển qua trang login
         // res.redirect('/verify-otp');
         res.render('account/verify-otp',{
+            layout: 'auth',
             email,
         })
     },
@@ -59,7 +62,7 @@ module.exports = {
     getLogin(req, res) {
         // Nếu có query success thì hiện thông báo
         const success_msg = req.query.register_success ? 'Đăng ký thành công, hãy đăng nhập!' : null;
-        res.render('account/login', { success_msg });
+        res.render('account/login', { layout: 'auth', success_msg });
     },
 
     // 4. Xử lý Logout
@@ -161,6 +164,7 @@ module.exports = {
     async getVerifyOTP(req,res){
         const email = req.query.email || req.session.email;
         res.render('account/verify-otp',{
+            layout: 'auth',
             email
         })
     },
@@ -179,6 +183,7 @@ module.exports = {
             
         } catch (error) {
             res.render('account/verify-otp',{
+                layout: 'auth',
                 email,
                 error_msg:error.message
             })
@@ -193,11 +198,13 @@ module.exports = {
             await userModel.updateOTP(email,newOtp) 
             await emailService.sendVerificationEmail(email,newOtp)
              res.render('account/verify-otp',{
+                layout: 'auth',
                 email,
                 success_msg:"A new OTP has been sent to your email."
              })
         } catch (error) {
              res.render('account/verify-otp',{
+                layout: 'auth',
                 email,
                 error_msg:error.message
              })

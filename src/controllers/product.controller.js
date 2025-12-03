@@ -1,6 +1,7 @@
 // Product controller: listing, search, category filter, pagination, sorting
 // NOTE: This file uses mock data for demo. Replace the data access with DB queries for production (e.g., full-text search in Postgres).
-
+const categoriesModel = require('../models/category.model')
+const productModel = require("../models/product.model")
 function sampleProductsExtended() {
     const now = Date.now();
     const make = (i, cat, subcat) => ({
@@ -47,6 +48,7 @@ function relativeRemaining(iso) {
 // Utility: full-text-like filter by q (on title) and category/subcategory
 function filterAndSearch(all, q, category) {
     let res = all.slice();
+
     if (category) {
         const normalized = category.toLowerCase();
         // match category or subcategory slug names
@@ -62,10 +64,42 @@ function filterAndSearch(all, q, category) {
     }
     return res;
 }
+function cumstomerProduct(products){
+    return products.map(p => {
+        // Format datetime cho timezone Việt Nam (GMT+7)
+        const formatDateTimeLocal = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            // Format: YYYY-MM-DD HH:mm (bỏ giây và milliseconds)
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        };
+
+        return {
+            id: p.id,
+            title: p.name,
+            image: p.avatar_url,
+            currentPrice: p.current_price || p.starting_price,
+            bidsCount: p.bid_count || 0,
+            buyNowPrice: p.buy_now_price,
+            createdAt: formatDateTimeLocal(p.starts_at),
+            endsAt: formatDateTimeLocal(p.ends_at),
+            category: p.category_name,
+            subcategory: '', // Placeholder, add subcategory if available
+            seller: { name: p.seller_name, id: p.seller_id }
+        };
+    });
+}
 
 async function listProducts(req, res, next) {
     try {
-        const all = sampleProductsExtended();
+        // const all = sampleProductsExtended()
+        const products = await productModel.listAllProducts();
+        console.log('All products from DB:', products);
         const q = (req.query.q || '').trim();
         const category = req.query.category || '';
         const page = Math.max(1, parseInt(req.query.page || '1', 10));
@@ -73,6 +107,8 @@ async function listProducts(req, res, next) {
         const sort = req.query.sort || 'end_desc'; // end_desc, price_asc
         const newWithinMinutes = parseInt(req.query.new_minutes || '60', 10);
 
+        // let filtered = filterAndSearch(all, q, category);
+        const all = cumstomerProduct(products);
         let filtered = filterAndSearch(all, q, category);
 
         // Sorting
@@ -91,41 +127,8 @@ async function listProducts(req, res, next) {
         }));
 
         // categories for sidebar (static for now) - expanded list to match UI
-        const categories = [
-            { id: 'electronics', name: 'Điện tử' },
-            { id: 'electronics-phones', name: 'Điện thoại di động', parent: 'electronics' },
-            { id: 'electronics-laptops', name: 'Máy tính xách tay', parent: 'electronics' },
-            { id: 'electronics-headphones', name: 'Tai nghe', parent: 'electronics' },
-            { id: 'electronics-monitors', name: 'Màn hình', parent: 'electronics' },
-            { id: 'electronics-tvs', name: 'Tivi', parent: 'electronics' },
-            { id: 'electronics-accessories', name: 'Phụ kiện', parent: 'electronics' },
-
-            { id: 'fashion', name: 'Thời trang' },
-            { id: 'fashion-shoes', name: 'Giày', parent: 'fashion' },
-            { id: 'fashion-watches', name: 'Đồng hồ', parent: 'fashion' },
-            { id: 'fashion-bags', name: 'Túi xách & Phụ kiện', parent: 'fashion' },
-            { id: 'fashion-clothing', name: 'Quần áo', parent: 'fashion' },
-
-            { id: 'books', name: 'Nhà sách' },
-            { id: 'books-fiction', name: 'Tiểu thuyết', parent: 'books' },
-            { id: 'books-education', name: 'Sách học & Giáo trình', parent: 'books' },
-            { id: 'books-comics', name: 'Truyện tranh', parent: 'books' },
-
-            { id: 'lifestyle', name: 'Đời sống & Du lịch' },
-            { id: 'lifestyle-travel', name: 'Du lịch', parent: 'lifestyle' },
-            { id: 'lifestyle-home', name: 'Đời sống & Nội thất', parent: 'lifestyle' },
-            { id: 'lifestyle-kitchen', name: 'Đồ gia dụng & Nhà bếp', parent: 'lifestyle' },
-
-            { id: 'auto', name: 'Ô tô & Xe máy' },
-            { id: 'auto-cars', name: 'Xe ô tô', parent: 'auto' },
-            { id: 'auto-motorcycles', name: 'Xe máy', parent: 'auto' },
-            { id: 'auto-parts', name: 'Phụ tùng & Phụ kiện', parent: 'auto' },
-
-            { id: 'beauty', name: 'Sắc đẹp & Sức khỏe' },
-            { id: 'beauty-skincare', name: 'Chăm sóc da', parent: 'beauty' },
-            { id: 'beauty-makeup', name: 'Trang điểm', parent: 'beauty' }
-        ];
-
+        const categories = await categoriesModel.getTree();
+        
         res.render('products/list', {
             products: pageItems,
             total,
@@ -150,7 +153,23 @@ async function search(req, res, next) {
     return listProducts(req, res, next);
 }
 
+// Get create product form
+async function getCreateProduct(req, res, next) {
+    try {
+        const categories = await categoriesModel.getSubCategories();
+
+        res.render('products/create_product', {
+            categories,
+            isAuth: req.isAuthenticated && req.isAuthenticated(),
+            authUser: req.user
+        });
+    } catch (err) {
+        next(err);
+    }
+}
+
 module.exports = {
     listProducts,
-    search
+    search,
+    getCreateProduct
 };
