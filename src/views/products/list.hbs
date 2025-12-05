@@ -63,7 +63,8 @@
                     <div class="mt-auto d-flex flex-column gap-2">
                         <div class="watchlist-btn">
                             {{#if ../isAuth}}
-                            <form method="POST" action="{{#if watchlisted}}/watchlist/{{id}}/remove{{else}}/watchlist/{{id}}/add{{/if}}"
+                            <form method="POST"
+                                action="{{#if watchlisted}}/watchlist/{{id}}/remove{{else}}/watchlist/{{id}}/add{{/if}}"
                                 class="d-grid">
                                 <button class="btn btn-outline-secondary btn-sm" type="submit">
                                     {{#if watchlisted}}<i class="fas fa-heart-broken"></i> Bỏ yêu thích{{else}}<i

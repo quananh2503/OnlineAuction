@@ -122,8 +122,7 @@
                 {{#if isAuth}}
                 <form class="d-flex gap-2" method="POST" action="/products/{{product.id}}/questions"
                     onsubmit="return confirm('Gửi câu hỏi đến người bán?');">
-                    <input type="text" name="content" class="form-control" placeholder="Nội dung câu hỏi"
-                        required>
+                    <input type="text" name="content" class="form-control" placeholder="Nội dung câu hỏi" required>
                     <button class="btn btn-primary" type="submit">Gửi</button>
                 </form>
                 {{/if}}
@@ -144,8 +143,8 @@
                     </div>
                     {{else}}
                     {{#if ../product.isSeller}}
-                    <form method="POST" action="/products/{{../product.id}}/questions/{{id}}/answer"
-                        class="mt-2" onsubmit="return confirm('Gửi câu trả lời?');">
+                    <form method="POST" action="/products/{{../product.id}}/questions/{{id}}/answer" class="mt-2"
+                        onsubmit="return confirm('Gửi câu trả lời?');">
                         <div class="input-group">
                             <input type="text" name="answer" class="form-control" placeholder="Nhập câu trả lời"
                                 required>
