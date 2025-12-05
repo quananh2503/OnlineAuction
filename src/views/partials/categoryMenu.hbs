@@ -1,0 +1,29 @@
+<div class="card mb-4">
+    <div class="card-header bg-light fw-bold">Danh mục sản phẩm</div>
+    <ul class="list-group list-group-flush category-menu">
+        {{#each categories}}
+            <li class="list-group-item {{#if this.children.length}}has-children{{/if}}">
+                <a href="/products?category={{this.id}}" class="d-block fw-semibold">
+                   {{this.name}}
+                </a>
+                
+                {{#if this.children.length}}
+                <ul class="children list-unstyled ms-3 mt-2">
+                    {{#each this.children}}
+                    <li>
+                        <a href="/products?category={{this.id}}" class="d-block">
+                           {{this.name}}
+                        </a>
+                    </li>
+                    {{/each}}
+                </ul>
+                {{/if}}
+            </li>
+        {{else}}
+            <li class="list-group-item text-center text-muted py-3">
+                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                Chưa có danh mục
+            </li>
+        {{/each}}
+    </ul>
+</div>

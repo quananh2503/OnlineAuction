@@ -1,0 +1,94 @@
+<section class="home-hero text-center text-white py-5 mb-5">
+    <div class="container">
+        <p class="home-hero__eyebrow mb-2">Phiên đấu giá trực tuyến</p>
+        <h1 class="home-hero__title mb-3">Chào mừng đến với Auction Pro</h1>
+        <p class="home-hero__subtitle mb-0">Nơi diễn ra những phiên đấu giá sôi động nhất 🔥</p>
+    </div>
+</section>
+
+<section class="home-section container mb-5">
+    <div class="home-section__header d-flex justify-content-between align-items-center mb-4">
+        <h2 class="home-section__title">Top Sản Phẩm Sắp Kết Thúc ⏰</h2>
+        <a class="home-section__link" href="/products?sort=ending">Xem tất cả</a>
+    </div>
+    <div class="row g-4">
+        {{#if endingSoon.length}}
+        {{#each endingSoon}}
+        <div class="col-12 col-sm-6 col-lg-3">
+            <article class="product-card h-100">
+                <div class="product-card__image-wrapper">
+                    <img src="{{image}}" alt="{{name}}" class="product-card__image">
+                </div>
+                <div class="product-card__body">
+                    <h3 class="product-card__name">{{name}}</h3>
+                    <p class="product-card__price">{{currentPrice}}</p>
+                    <p class="product-card__meta">{{bidCount}} lượt đặt giá · {{timeLeft}}</p>
+                </div>
+            </article>
+        </div>
+        {{/each}}
+        {{else}}
+        <div class="col-12">
+            <p class="text-muted text-center">Chưa có phiên đấu giá nào.</p>
+        </div>
+        {{/if}}
+    </div>
+</section>
+
+<section class="home-section container mb-5">
+    <div class="home-section__header d-flex justify-content-between align-items-center mb-4">
+        <h2 class="home-section__title">Top Sản Phẩm Nhiều Lượt Đấu Giá Nhất 🔥</h2>
+        <a class="home-section__link" href="/products?sort=most-bids">Xem tất cả</a>
+    </div>
+    <div class="row g-4">
+        {{#if mostBids.length}}
+        {{#each mostBids}}
+        <div class="col-12 col-sm-6 col-lg-3">
+            <article class="product-card h-100">
+                <div class="product-card__image-wrapper">
+                    <img src="{{image}}" alt="{{name}}" class="product-card__image">
+                </div>
+                <div class="product-card__body">
+                    <h3 class="product-card__name">{{name}}</h3>
+                    <p class="product-card__price">{{currentPrice}}</p>
+                    <p class="product-card__meta">{{bidCount}} lượt đặt giá · {{timeLeft}}</p>
+                </div>
+            </article>
+        </div>
+        {{/each}}
+        {{else}}
+        <div class="col-12">
+            <p class="text-muted text-center">Chưa có phiên đấu giá nào.</p>
+        </div>
+        {{/if}}
+    </div>
+</section>
+
+<section class="home-section container mb-5">
+    <div class="home-section__header d-flex justify-content-between align-items-center mb-4">
+        <h2 class="home-section__title">Top Sản Phẩm Giá Cao Nhất 💎</h2>
+        <a class="home-section__link" href="/products?sort=price-desc">Xem tất cả</a>
+    </div>
+    <div class="row g-4">
+        {{#if highestPrice.length}}
+        {{#each highestPrice}}
+        <div class="col-12 col-sm-6 col-lg-3">
+            <article class="product-card h-100">
+                <div class="product-card__image-wrapper">
+                    <img src="{{image}}" alt="{{name}}" class="product-card__image">
+                </div>
+                <div class="product-card__body">
+                    <h3 class="product-card__name">{{name}}</h3>
+                    <p class="product-card__price">{{currentPrice}}</p>
+                    <p class="product-card__meta">{{bidCount}} lượt đặt giá · {{timeLeft}}</p>
+                </div>
+            </article>
+        </div>
+        {{/each}}
+        {{else}}
+        <div class="col-12">
+            <p class="text-muted text-center">Chưa có phiên đấu giá nào.</p>
+        </div>
+        {{/if}}
+    </div>
+</section>
