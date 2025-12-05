@@ -1,0 +1,330 @@
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Tạo sản phẩm đấu giá mới</h3>
+                </div>
+                <div class="card-body p-4">
+                    {{#if error_msg}}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {{/if}}
+
+                    <form action="/products/create" method="POST" enctype="multipart/form-data">
+                        {{! Tên sản phẩm }}
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold">
+                                <i class="fas fa-tag me-1"></i>Tên sản phẩm
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="name" 
+                                name="name" 
+                                placeholder="Nhập tên sản phẩm"
+                                required
+                                value="{{old_values.name}}"
+                            >
+                        </div>
+
+                        {{! Category }}
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label fw-bold">
+                                <i class="fas fa-list me-1"></i>Danh mục
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                <option value="">-- Chọn danh mục --</option>
+                                {{#each categories}}
+                                <option value="{{this.id}}" {{#if (eq ../old_values.category_id this.id)}}selected{{/if}}>
+                                    {{this.name}}
+                                </option>
+                                {{/each}}
+                            </select>
+                        </div>
+
+                        {{! Description }}
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-bold">
+                                <i class="fas fa-align-left me-1"></i>Mô tả sản phẩm
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="description" 
+                                name="description" 
+                                rows="4"
+                                placeholder="Mô tả chi tiết về sản phẩm..."
+                            >{{old_values.description}}</textarea>
+                        </div>
+
+                        {{! Thời gian bắt đầu và kết thúc }}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="starts_at" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-alt me-1"></i>Thời gian bắt đầu
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="datetime-local" 
+                                    class="form-control" 
+                                    id="starts_at" 
+                                    name="starts_at"
+                                    required
+                                    value="{{old_values.starts_at}}"
+                                >
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="ends_at" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-check me-1"></i>Thời gian kết thúc
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="datetime-local" 
+                                    class="form-control" 
+                                    id="ends_at" 
+                                    name="ends_at"
+                                    required
+                                    value="{{old_values.ends_at}}"
+                                >
+                            </div>
+                        </div>
+
+                        {{! Giá cả }}
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="starting_price" class="form-label fw-bold">
+                                    <i class="fas fa-dollar-sign me-1"></i>Giá khởi điểm (VNĐ)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="starting_price" 
+                                    name="starting_price"
+                                    min="0"
+                                    step="1000"
+                                    placeholder="100000"
+                                    required
+                                    value="{{old_values.starting_price}}"
+                                >
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="price_step" class="form-label fw-bold">
+                                    <i class="fas fa-layer-group me-1"></i>Bước giá (VNĐ)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="price_step" 
+                                    name="price_step"
+                                    min="0"
+                                    step="1000"
+                                    placeholder="10000"
+                                    required
+                                    value="{{old_values.price_step}}"
+                                >
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="buy_now_price" class="form-label fw-bold">
+                                    <i class="fas fa-shopping-cart me-1"></i>Giá mua ngay (VNĐ)
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="buy_now_price" 
+                                    name="buy_now_price"
+                                    min="0"
+                                    step="1000"
+                                    placeholder="Không bắt buộc"
+                                    value="{{old_values.buy_now_price}}"
+                                >
+                                <small class="text-muted">Để trống nếu không có</small>
+                            </div>
+                        </div>
+
+                        {{! Ảnh sản phẩm }}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-images me-1"></i>Hình ảnh sản phẩm
+                                <span class="text-danger">*</span>
+                            </label>
+                            
+                            {{! Avatar - Ảnh đại diện }}
+                            <div class="mb-3">
+                                <label for="avatarImage" class="form-label">
+                                    <i class="fas fa-image me-1"></i>Ảnh đại diện (Avatar)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="file" 
+                                    class="form-control" 
+                                    id="avatarImage" 
+                                    name="avatarImage"
+                                    accept="image/*"
+                                    required
+                                >
+                                <small class="text-muted">Ảnh chính của sản phẩm. Định dạng: JPG, PNG, GIF. Tối đa: 5MB</small>
+                                
+                                {{! Preview ảnh avatar }}
+                                <div id="avatarPreview" class="mt-2" style="display: none;">
+                                    <img id="avatarPreviewImg" src="" alt="Avatar Preview" class="img-thumbnail" style="max-height: 150px;">
+                                </div>
+                            </div>
+
+                            {{! Các ảnh mô tả }}
+                            <div class="mb-3">
+                                <label for="descriptionImages" class="form-label">
+                                    <i class="fas fa-images me-1"></i>Ảnh mô tả chi tiết
+                                    <span class="text-danger">* (Tối thiểu 3 ảnh)</span>
+                                </label>
+                                <input 
+                                    type="file" 
+                                    class="form-control" 
+                                    id="descriptionImages" 
+                                    name="descriptionImages"
+                                    accept="image/*"
+                                    multiple
+                                    required
+                                >
+                                <small class="text-muted">Chọn ít nhất 3 ảnh mô tả sản phẩm từ các góc độ khác nhau. Giữ Ctrl để chọn nhiều ảnh.</small>
+                                
+                                {{! Preview các ảnh mô tả }}
+                                <div id="descriptionPreview" class="mt-2 d-flex flex-wrap gap-2">
+                                </div>
+                                <div id="imageCountWarning" class="text-danger mt-1" style="display: none;">
+                                    <small><i class="fas fa-exclamation-triangle me-1"></i>Vui lòng chọn ít nhất 3 ảnh mô tả!</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{! Buttons }}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Hủy
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Tạo sản phẩm
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{! Script preview ảnh }}
+<script>
+// Preview ảnh avatar
+document.getElementById('avatarImage').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreviewImg').src = e.target.result;
+            document.getElementById('avatarPreview').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Preview các ảnh mô tả
+document.getElementById('descriptionImages').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const previewContainer = document.getElementById('descriptionPreview');
+    const warningDiv = document.getElementById('imageCountWarning');
+    
+    // Clear previous previews
+    previewContainer.innerHTML = '';
+    
+    // Kiểm tra số lượng ảnh
+    if (files.length < 3) {
+        warningDiv.style.display = 'block';
+        previewContainer.style.display = 'none';
+    } else {
+        warningDiv.style.display = 'none';
+        previewContainer.style.display = 'flex';
+        
+        // Show previews
+        Array.from(files).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgDiv = document.createElement('div');
+                imgDiv.className = 'position-relative';
+                imgDiv.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview ${index + 1}" 
+                         class="img-thumbnail" style="max-height: 100px; max-width: 100px;">
+                    <span class="position-absolute top-0 start-0 badge bg-primary">${index + 1}</span>
+                `;
+                previewContainer.appendChild(imgDiv);
+            }
+            reader.readAsDataURL(file);
+        });
+    }
+});
+
+// Validate thời gian và số lượng ảnh
+document.querySelector('form').addEventListener('submit', function(e) {
+    const startsAt = new Date(document.getElementById('starts_at').value);
+    const endsAt = new Date(document.getElementById('ends_at').value);
+    const now = new Date();
+    
+    if (startsAt < now) {
+        e.preventDefault();
+        alert('Thời gian bắt đầu phải sau thời điểm hiện tại!');
+        return false;
+    }
+    
+    if (endsAt <= startsAt) {
+        e.preventDefault();
+        alert('Thời gian kết thúc phải sau thời gian bắt đầu!');
+        return false;
+    }
+    
+    const buyNowPrice = parseFloat(document.getElementById('buy_now_price').value);
+    const startingPrice = parseFloat(document.getElementById('starting_price').value);
+    
+    if (buyNowPrice && buyNowPrice <= startingPrice) {
+        e.preventDefault();
+        alert('Giá mua ngay phải lớn hơn giá khởi điểm!');
+        return false;
+    }
+    
+    // Validate số lượng ảnh mô tả
+    const descriptionImages = document.getElementById('descriptionImages').files;
+    if (descriptionImages.length < 3) {
+        e.preventDefault();
+        alert('Vui lòng chọn ít nhất 3 ảnh mô tả sản phẩm!');
+        return false;
+    }
+});
+</script>
+
+<style>
+.form-label {
+    color: #495057;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+</style>

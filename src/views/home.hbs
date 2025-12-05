@@ -1,0 +1,62 @@
+<!-- Main content: three product sections -->
+<main class="row">
+  <section class="col-md-12">
+
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <div class="hero-content">
+        <h1 class="hero-title">Đấu Giá Đỉnh Cao - Công Nghệ Trong Tầm Tay</h1>
+        <p class="hero-subtitle">Sàn đấu giá trực tuyến uy tín hàng đầu. Săn hàng độc, giá cực sốc ngay hôm nay!</p>
+        <div class="mt-4">
+          <a href="#ending-soon" class="btn-hero">Khám Phá Ngay</a>
+        </div>
+      </div>
+    </div>
+
+    {{#if query}}
+    <section class="mb-4">
+      <h4>Kết quả tìm kiếm cho "{{query}}"</h4>
+      {{#if searchResults.length}}
+      <div class="product-grid mt-3">
+        {{#each searchResults}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+      {{else}}
+      <p class="text-muted">Không tìm thấy sản phẩm phù hợp.</p>
+      {{/if}}
+    </section>
+    {{/if}}
+
+    <section class="mb-5" id="ending-soon">
+      <h4>Top 5 - Sắp kết thúc</h4>
+      <div class="product-grid mt-3">
+        {{#each endingSoon}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <h4>Top 5 - Nhiều lượt đấu nhất</h4>
+      <div class="product-grid mt-3">
+        {{#each mostBids}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <h4>Top 5 - Giá cao nhất</h4>
+      <div class="product-grid mt-3">
+        {{#each highestPrice}}
+        {{> productCard}}
+        {{/each}}
+      </div>
+    </section>
+</main>
+
+<!-- Footer supplement: marketplace info -->
+
+</section>
+</main>
