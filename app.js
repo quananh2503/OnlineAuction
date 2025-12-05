@@ -1,4 +1,14 @@
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+
+// Load .env next to app.js or one folder up (workspace root)
+const envCandidates = [
+    path.resolve(__dirname, '.env'),
+    path.resolve(__dirname, '../.env')
+];
+const envPath = envCandidates.find(fs.existsSync);
+require('dotenv').config(envPath ? { path: envPath } : undefined);
+
 const express = require('express');
 const { engine } = require('express-handlebars');
 const session = require('express-session');

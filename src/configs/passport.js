@@ -10,7 +10,7 @@ passport.use(new LocalStrategy({
     try {
         // 1. Tìm user trong DB
         const user = await userModel.findByEmail(email);
-        
+
         // 2. Nếu không có user -> Báo lỗi
         if (!user) {
             return done(null, false, { message: 'Email không tồn tại!' });
@@ -29,7 +29,7 @@ passport.use(new LocalStrategy({
 
         // 5. Kiểm tra trạng thái active
         if (user.status !== 'ACTIVE') {
-            return done(null, false, { 
+            return done(null, false, {
                 message: 'Tài khoản chưa được kích hoạt!',
                 needVerify: true,
                 email: user.email
@@ -58,7 +58,6 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-require('dotenv').config();
 
 // ... (LocalStrategy cũ vẫn giữ nguyên)
 
@@ -71,10 +70,10 @@ passport.use(new GoogleStrategy({
     try {
         // profile chứa thông tin user từ Google
         const email = profile.emails[0].value;
-        
+
         // Kiểm tra user đã tồn tại chưa
         let user = await userModel.findByEmail(email);
-        
+
         if (user) {
             // User ĐÃ TỒN TẠI
             if (user.status === 'INACTIVE') {
@@ -85,7 +84,7 @@ passport.use(new GoogleStrategy({
             // Đăng nhập với user hiện có
             return done(null, user);
         }
-        
+
         // User CHƯA TỒN TẠI → Tạo mới
         const newUser = {
             name: profile.displayName,
@@ -94,9 +93,9 @@ passport.use(new GoogleStrategy({
             password: null,
             status: 'ACTIVE'
         };
-        
+
         const createdUser = await userModel.add(newUser);
-        
+
         return done(null, createdUser.id);
     } catch (err) {
         return done(err, null);
