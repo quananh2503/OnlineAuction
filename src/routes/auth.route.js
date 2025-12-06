@@ -11,8 +11,8 @@ router.post('/register', authController.postRegister);
 // // --- ĐĂNG NHẬP ---
 router.get('/login', authController.getLogin);
 
-// Xử lý POST Login (Giao cho Passport lo)
-router.post('/login', (req, res, next) => {
+// Xử lý POST Login (Verify reCAPTCHA trước, sau đó Passport xử lý)
+router.post('/login', authController.verifyRecaptcha, (req, res, next) => {
     passport.authenticate('local', (err, user, info) => {
         if (err) { return next(err); }
 
@@ -24,7 +24,8 @@ router.post('/login', (req, res, next) => {
             }
             return res.render('account/login', { 
                 layout: 'auth',
-                error_msg: info.message 
+                error_msg: info.message,
+                recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY
             });
         }
         

@@ -114,10 +114,20 @@ module.exports = {
         } finally {
             client.release();
         }
+    },
+
+    // Cập nhật status của product
+    async updateStatus(productId, status) {
+        const sql = `
+            UPDATE products
+            SET status = $1
+            WHERE id = $2
+            RETURNING *
+        `;
+        const result = await db.query(sql, [status, productId]);
+        return result.rows[0];
     }
-    // // 1. Tìm user bằng email (Dùng cho Đăng nhập & check trùng email)
-    // async findByEmail(email) {
-    //     const sql = `SELECT * FROM users WHERE email = $1`;
+};
     //     const result = await db.query(sql, [email]);
     //     return result.rows[0]; // Trả về user hoặc undefined
     // },
@@ -217,4 +227,4 @@ module.exports = {
     //     ]);
     //     return result.rows[0]; 
     // }
-};
+// };

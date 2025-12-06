@@ -16,7 +16,7 @@
 <body>
 
     <!-- Header / Menu -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="/">
                 <i class="fa-solid fa-gavel"></i> Auction Pro
@@ -116,15 +116,35 @@
                 <!-- Auth area -->
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     {{#if isAuth}}
+                    {{! Watchlist link - chỉ hiện khi đã đăng nhập }}
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="/watchlist/my-watchlist" title="Danh sách theo dõi">
+                            <i class="fas fa-bookmark fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                <span class="visually-hidden">watchlist items</span>
+                            </span>
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenuTop"
                             role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="{{authUser.avatarUrl}}" class="avatar me-2"
-                                onerror="this.src='/images/avatar-placeholder.png'"> {{authUser.full_name}}
+                            {{authUser.name}}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuTop">
-                            <li><a class="dropdown-item" href="/account">Tài khoản</a></li>
-                            <li><a class="dropdown-item" href="/auth/logout">Đăng xuất</a></li>
+                            <li><a class="dropdown-item" href="/auth/profile">
+                                <i class="fas fa-user me-2"></i>Tài khoản
+                            </a></li>
+                            <li><a class="dropdown-item" href="/watchlist/my-watchlist">
+                                <i class="fas fa-bookmark me-2"></i>Danh sách theo dõi
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="/auth/logout" method="POST" class="d-inline">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                     {{else}}

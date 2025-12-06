@@ -15,7 +15,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {{/if}}
-        <form action="/auth/login" method="POST">
+        <form action="/auth/login" method="POST" id="loginForm">
             <div class=" form-floating mb-3">
                 <input type="email" name="email" id="emailInput" placeholder="name@example.com" class="form-control"
                     required>
@@ -26,6 +26,7 @@
                     required>
                 <label for="passwordInput" class="form-label">Password</label>
             </div>
+            <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
             <div class=" mb-3">
                 <button type="submit" class="btn btn-primary w-100">Login</button>
             </div>
@@ -49,3 +50,19 @@
         </form>
     </div>
 </div>
+
+{{! reCAPTCHA v3 Script }}
+<script src="https://www.google.com/recaptcha/api.js?render={{recaptchaSiteKey}}"></script>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        
+        grecaptcha.ready(function() {
+            grecaptcha.execute('{{recaptchaSiteKey}}', {action: 'login'}).then(function(token) {
+                document.getElementById('g-recaptcha-response').value = token;
+                form.submit();
+            });
+        });
+    });
+</script>

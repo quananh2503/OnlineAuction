@@ -13,4 +13,13 @@ router.post('/categories', adminController.createCategory);
 router.post('/categories/:id/update', adminController.updateCategory);
 router.post('/categories/:id/delete', adminController.deleteCategory);
 
+// Products Management
+router.get('/products', adminController.listProducts);
+router.post('/products/:id/remove', adminController.removeProduct);
+
+// Bidder Requests Management
+router.get('/bidder-requests', adminController.listBidderRequests);
+router.post('/bidder-requests/:id/approve', adminController.approveBidderRequest);
+router.post('/bidder-requests/:id/reject', adminController.rejectBidderRequest);
+
 module.exports = router;

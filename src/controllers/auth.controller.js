@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const userModel = require('../models/user.model');
 const emailService = require('../services/email.service'); // Thêm dòng này
 const crypto = require('crypto'); // Thư viện sẵn có của Node.js
+const axios = require('axios');
 
 module.exports = {
     // 1. Hiển thị form đăng ký
@@ -62,14 +63,63 @@ module.exports = {
     getLogin(req, res) {
         // Nếu có query success thì hiện thông báo
         const success_msg = req.query.register_success ? 'Đăng ký thành công, hãy đăng nhập!' : null;
-        res.render('account/login', { layout: 'auth', success_msg });
+        res.render('account/login', { 
+            layout: 'auth', 
+            success_msg,
+            recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY
+        });
+    },
+
+    // 3.1. Xử lý Login với reCAPTCHA v3 verification (middleware trước passport.authenticate)
+    async verifyRecaptcha(req, res, next) {
+        const recaptchaResponse = req.body['g-recaptcha-response'];
+        
+        if (!recaptchaResponse) {
+            return res.render('account/login', {
+                layout: 'auth',
+                error_msg: 'Lỗi xác thực bảo mật. Vui lòng thử lại!',
+                recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY
+            });
+        }
+
+        try {
+            // Gọi API Google để verify
+            const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaResponse}`;
+            const response = await axios.post(verifyUrl);
+            
+            // reCAPTCHA v3 trả về score từ 0.0 đến 1.0 (1.0 = chắc chắn là người, 0.0 = chắc chắn là bot)
+            if (response.data.success && response.data.score >= 0.5) {
+                next(); // Score >= 0.5 được coi là con người, tiếp tục xử lý login
+            } else {
+                console.log('reCAPTCHA score:', response.data.score);
+                return res.render('account/login', {
+                    layout: 'auth',
+                    error_msg: 'Phát hiện hoạt động bất thường. Vui lòng thử lại sau!',
+                    recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY
+                });
+            }
+        } catch (error) {
+            console.error('reCAPTCHA verification error:', error);
+            return res.render('account/login', {
+                layout: 'auth',
+                error_msg: 'Lỗi xác thực bảo mật. Vui lòng thử lại!',
+                recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY
+            });
+        }
     },
 
     // 4. Xử lý Logout
     postLogout(req, res, next) {
         req.logout(function (err) {
             if (err) { return next(err); }
-            res.redirect('/');
+            
+            // Xóa session khỏi database
+            req.session.destroy(function (err) {
+                if (err) {
+                    console.error('Error destroying session:', err);
+                }
+                res.redirect('/');
+            });
         });
     },
     getProfile(req,res){

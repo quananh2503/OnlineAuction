@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const { engine } = require('express-handlebars');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+const { Pool } = require('pg');
 
 require('express-async-errors'); 
 
@@ -14,12 +16,27 @@ const app = express();
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
-// 2. Cấu hình Session (BẮT BUỘC PHẢI CÓ TRƯỚC PASSPORT)
+// Pool cho session store
+const sessionPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
+// 2. Cấu hình Session với PostgreSQL Store
 app.use(session({
+    store: new pgSession({
+        pool: sessionPool,
+        tableName: 'session'
+    }),
     secret: process.env.SESSION_SECRET || 'ban_quen_cau_hinh_env_roi',
     resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 ngày
+    saveUninitialized: false,
+    cookie: { 
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+        secure: false // Đổi thành true nếu dùng HTTPS
+    }
 }));
 
 // 3. Khởi động Passport (BẮT BUỘC)
@@ -41,11 +58,16 @@ app.engine('hbs', engine({
     partialsDir: 'src/views/partials',
      helpers: {
         eq: (a, b) => a === b,
+        ne: (a, b) => a !== b,
+        gt: (a, b) => a > b,
+        lt: (a, b) => a < b,
+        gte: (a, b) => a >= b,
+        lte: (a, b) => a <= b,
+        and: (a, b) => a && b,
+        or: (a, b) => a || b,
         ifEquals: function (a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); },
         add: (a, b) => a + b,
         subtract: (a, b) => a - b,
-        gt: (a, b) => a > b,
-        lt: (a, b) => a < b,
         range: function (start, end, options) {
             const arr = [];
             for (let i = start; i <= end; i++) arr.push(i);
