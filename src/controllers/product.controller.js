@@ -18,6 +18,15 @@ const {
 const BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
 const SELF_BID_COOLDOWN_SECONDS = 5;
 
+async function safeQuery(text, params) {
+    try {
+        return await db.query(text, params);
+    } catch (err) {
+        console.warn(`Query failed: ${text.substring(0, 50)}...`, err.message);
+        return { rows: [], rowCount: 0 };
+    }
+}
+
 function wantsJson(req) {
     return Boolean(
         req.xhr ||
@@ -89,9 +98,9 @@ async function loadProductDetail(productId, currentUserId) {
 
     const [productRes, imagesRes, descRes, bidsRes, questionsRes, relatedRes, watchRes] = await Promise.all([
         db.query(productSql, [productId]),
-        db.query(`SELECT url, type FROM images WHERE product_id = $1 ORDER BY (type = 'AVATAR') DESC, id ASC`, [productId]),
-        db.query(`SELECT content FROM descriptions WHERE product_id = $1 LIMIT 1`, [productId]),
-        db.query(`
+        safeQuery(`SELECT url, type FROM images WHERE product_id = $1 ORDER BY (type = 'AVATAR') DESC, id ASC`, [productId]),
+        safeQuery(`SELECT content FROM descriptions WHERE product_id = $1 LIMIT 1`, [productId]),
+        safeQuery(`
             SELECT b.id, b.price, b.created_at, u.name
             FROM bids b
             JOIN users u ON b.bidder_id = u.id
@@ -99,7 +108,7 @@ async function loadProductDetail(productId, currentUserId) {
             ORDER BY created_at DESC
             LIMIT 50
         `, [productId]),
-        db.query(`
+        safeQuery(`
             SELECT q.*, u.name AS asker_name, u.email AS asker_email
             FROM questions q
             JOIN users u ON q.user_id = u.id
@@ -115,7 +124,7 @@ async function loadProductDetail(productId, currentUserId) {
             ORDER BY p.ends_at ASC
             LIMIT 5
         `, [productId]),
-        currentUserId ? db.query('SELECT 1 FROM watchlists WHERE user_id = $1 AND product_id = $2', [currentUserId, productId]) : Promise.resolve({ rowCount: 0 })
+        currentUserId ? safeQuery('SELECT 1 FROM watchlists WHERE user_id = $1 AND product_id = $2', [currentUserId, productId]) : Promise.resolve({ rowCount: 0 })
     ]);
 
     if (!productRes.rows.length) {
@@ -237,7 +246,7 @@ async function listProducts(req, res, next) {
 
 async function detailPage(req, res, next) {
     try {
-        const productId = parseInt(req.params.id, 10);
+        const productId = req.params.id;
         const detail = await loadProductDetail(productId, req.user?.id);
         if (!detail) {
             return res.status(404).render('404');
@@ -373,7 +382,7 @@ async function ensureBidEligibility(product, bidderRating, bidderId) {
 }
 
 async function placeBid(req, res, next) {
-    const productId = parseInt(req.params.productId, 10);
+    const productId = req.params.productId;
     const bidAmount = parseFloat(req.body.amount);
     if (Number.isNaN(bidAmount)) {
         return res.status(400).json({ success: false, message: 'Giá không hợp lệ.' });
@@ -442,7 +451,7 @@ async function placeBid(req, res, next) {
 }
 
 async function buyNow(req, res, next) {
-    const productId = parseInt(req.params.productId, 10);
+    const productId = req.params.productId;
     const client = await db.getClient();
     try {
         await client.query('BEGIN');
@@ -493,7 +502,7 @@ async function buyNow(req, res, next) {
 
 async function addToWatchlist(req, res, next) {
     try {
-        const productId = parseInt(req.params.productId, 10);
+        const productId = req.params.productId;
         await db.query(
             'INSERT INTO watchlists (user_id, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
             [req.user.id, productId]
@@ -509,7 +518,7 @@ async function addToWatchlist(req, res, next) {
 
 async function removeFromWatchlist(req, res, next) {
     try {
-        const productId = parseInt(req.params.productId, 10);
+        const productId = req.params.productId;
         await db.query('DELETE FROM watchlists WHERE user_id = $1 AND product_id = $2', [req.user.id, productId]);
         if (wantsJson(req)) {
             return res.json({ success: true });
@@ -554,7 +563,7 @@ async function watchlistPage(req, res, next) {
 
 async function postQuestion(req, res, next) {
     try {
-        const productId = parseInt(req.params.productId, 10);
+        const productId = req.params.productId;
         const content = (req.body.content || '').trim();
         if (!content) {
             return respondWithFallback(req, res, `/products/${productId}`, { success: false, message: 'Nội dung câu hỏi không được để trống.' }, 400);
@@ -582,7 +591,7 @@ async function postQuestion(req, res, next) {
 
 async function answerQuestion(req, res, next) {
     try {
-        const productId = parseInt(req.params.productId, 10);
+        const productId = req.params.productId;
         const questionId = parseInt(req.params.questionId, 10);
         const answer = (req.body.answer || '').trim();
         if (!answer) {

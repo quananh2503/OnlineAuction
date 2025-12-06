@@ -28,17 +28,13 @@
             </button>
 
             <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav ms-3 me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav primary-nav ms-3 mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Trang chủ</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/products">Sản phẩm</a>
                     </li>
-                </ul>
-
-                <!-- Categories dropdown -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item dropdown category-dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
@@ -66,7 +62,7 @@
                 </ul>
 
                 <!-- Search -> center on large screens -->
-                <form class="d-flex mx-auto w-50" role="search" action="/search" method="GET">
+                <form class="d-flex header-search mx-lg-auto my-2 my-lg-0" role="search" action="/search" method="GET">
                     <input name="q" class="form-control me-2" type="search" placeholder="Tìm sản phẩm, danh mục..."
                         aria-label="Search">
                     <button class="btn btn-outline-light" type="submit"><i class="fa fa-search"></i></button>
