@@ -35,18 +35,17 @@ module.exports = {
         return result.rows[0];
     },
     async update(user) {
-        // user là object chứa { email, password, name, address, google_id }
+        // Chỉ update name, address, birthday - KHÔNG update email
         const sql = `
             UPDATE users
-            set email=$2,name=$3,address=$4,birthday=$5
-            where id = $1
-            returning *;
+            SET name = $2, address = $3, birthday = $4
+            WHERE id = $1
+            RETURNING *;
         `;
         const result = await db.query(sql, [
             user.id,
-            user.email, 
             user.name, 
-            user.address ,
+            user.address,
             user.birthday
         ]);
         return result.rows[0];
@@ -103,5 +102,17 @@ module.exports = {
             email
         ]);
         return result.rows[0]; 
+    },
+
+    // Update role của user
+    async updateRole(userId, role) {
+        const sql = `
+            UPDATE users
+            SET role = $2
+            WHERE id = $1
+            RETURNING *;
+        `;
+        const result = await db.query(sql, [userId, role]);
+        return result.rows[0];
     }
 };

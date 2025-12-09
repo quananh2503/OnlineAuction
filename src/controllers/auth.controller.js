@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const userModel = require('../models/user.model');
+const bidderRequestModel = require('../models/bidder-request.model');
 const emailService = require('../services/email.service'); // Thêm dòng này
 const crypto = require('crypto'); // Thư viện sẵn có của Node.js
 const axios = require('axios');
@@ -109,25 +110,36 @@ module.exports = {
     },
 
     // 4. Xử lý Logout
-    postLogout(req, res, next) {
-        req.logout(function (err) {
-            if (err) { return next(err); }
+    async postLogout(req, res, next) {
+        const db = require('../configs/db');
+        const sessionId = req.sessionID;
+        
+        console.log('🔓 Bắt đầu logout, Session ID:', sessionId);
+        
+        try {
+            // Bước 1: Xóa session trong database
+            const result = await db.query('DELETE FROM session WHERE sid = $1 RETURNING *', [sessionId]);
             
-            // Xóa session khỏi database
-            req.session.destroy(function (err) {
-                if (err) {
-                    console.error('Error destroying session:', err);
-                }
-                res.redirect('/');
-            });
-        });
+            if (result.rowCount > 0) {
+                console.log('✅ Đã xóa session khỏi database');
+            } else {
+                console.log('⚠️ Session không tồn tại trong database');
+            }
+            
+        } catch (error) {
+            console.error('❌ Lỗi xóa session:', error);
+        }
+        
+        // Bước 2: Xóa cookie ở browser
+        res.clearCookie('connect.sid', { path: '/' });
+        
+        // Bước 3: Redirect về trang chủ
+        console.log('✅ Logout hoàn tất, redirect về home');
+        res.redirect('/');
     },
-    getProfile(req,res){
-        // console.log('=== PROFILE DEBUG ===');
-        // console.log('req.isAuthenticated():', req.isAuthenticated());
+    async getProfile(req,res){
+        console.log('=== GET PROFILE ===');
         console.log('req.user:', req.user);
-        // console.log('req.session:', req.session);
-        // console.log('===================');
         
         // Format birthday cho input type="date"
         const user = { ...req.user };
@@ -135,17 +147,39 @@ module.exports = {
             user.birthday = new Date(user.birthday).toISOString().split('T')[0];
         }
         
-        res.render('account/profile', { user });
+        // Kiểm tra request seller nếu chưa phải seller
+        let sellerRequestStatus = null;
+        if (user.role !== 'SELLER' && user.role !== 'ADMIN') {
+            try {
+                const latestRequest = await bidderRequestModel.getLatestByUserId(user.id);
+                console.log('Latest request:', latestRequest);
+                if (latestRequest) {
+                    sellerRequestStatus = latestRequest.status;
+                }
+            } catch (error) {
+                console.error('Error getting latest request:', error);
+                console.error('Error stack:', error.stack);
+            }
+        }
+        
+        const showSellerRequest = user.role !== 'SELLER' && user.role !== 'ADMIN';
+        console.log('showSellerRequest:', showSellerRequest);
+        console.log('sellerRequestStatus:', sellerRequestStatus);
+        
+        res.render('account/profile', { 
+            user,
+            showSellerRequest,
+            sellerRequestStatus
+        });
     },
     async postProfile(req,res){
         
         try {
-            const  {name,email,address,birthday} = req.body
+            const  {name, address, birthday} = req.body
             const id = req.user.id
             const newUser = {
-                id ,
+                id,
                 name,
-                email,
                 address,
                 birthday
             };
@@ -260,5 +294,36 @@ module.exports = {
              })
         }   
     
+    },
+
+    // Gửi yêu cầu nâng cấp lên Seller
+    async postRequestSeller(req, res) {
+        console.log('=== POST REQUEST SELLER ===');
+        console.log('User:', req.user);
+        console.log('Body:', req.body);
+        
+        try {
+            const userId = req.user.id;
+            
+            // Kiểm tra xem đã có request pending chưa
+            const hasPending = await bidderRequestModel.hasPendingRequest(userId);
+            console.log('Has pending request:', hasPending);
+            
+            if (hasPending) {
+                req.flash('error_msg', 'Bạn đã có yêu cầu đang chờ duyệt!');
+                return res.redirect('/account/profile');
+            }
+            
+            // Tạo request mới
+            const newRequest = await bidderRequestModel.create(userId);
+            console.log('Created request:', newRequest);
+            
+            req.flash('success_msg', 'Đã gửi yêu cầu! Vui lòng chờ admin duyệt.');
+            res.redirect('/account/profile');
+        } catch (error) {
+            console.error('Error creating seller request:', error);
+            req.flash('error_msg', 'Có lỗi xảy ra. Vui lòng thử lại!');
+            res.redirect('/account/profile');
+        }
     }
 };

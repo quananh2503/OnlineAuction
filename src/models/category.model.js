@@ -48,21 +48,7 @@ module.exports = {
         return result.rows;
     },
 
-    // Lấy cấu trúc cây (hierarchical)
-    async getTree() {
-        const parents = await this.getParentCategories();
-        const tree = [];
-        
-        for (const parent of parents) {
-            const children = await this.getChildCategories(parent.id);
-            tree.push({
-                ...parent,
-                children: children
-            });
-        }
-        
-        return tree;
-    },
+
 
     // Lấy category theo ID
     async getById(id) {
@@ -97,7 +83,7 @@ module.exports = {
                 throw new Error('Không thể đặt category con làm parent!');
             }
         }
-        
+
         const sql = `
             UPDATE categories
             SET name = $1, parent_id = $2
@@ -121,7 +107,7 @@ module.exports = {
             'SELECT COUNT(*) as count FROM products WHERE category_id = $1',
             [id]
         );
-        
+
         if (parseInt(productCheck.rows[0].count) > 0) {
             throw new Error('Không thể xóa category đang được sử dụng bởi sản phẩm!');
         }
@@ -139,13 +125,45 @@ module.exports = {
             AND parent_id IS NOT DISTINCT FROM $2
         `;
         const params = [name, parentId];
-        
+
         if (excludeId) {
             sql += ' AND id != $3';
             params.push(excludeId);
         }
-        
+
         const result = await db.query(sql, params);
         return result.rows.length > 0;
+    },
+
+    // Lấy cây danh mục (nested)
+    async getTree() {
+        const sql = `
+            SELECT id, name, parent_id
+            FROM categories
+            ORDER BY parent_id NULLS FIRST, name
+        `;
+        const result = await db.query(sql);
+        const categories = result.rows;
+
+        const map = {};
+        const roots = [];
+
+        // Tạo map
+        categories.forEach(c => {
+            map[c.id] = { ...c, children: [] };
+        });
+
+        // Xây dựng cây
+        categories.forEach(c => {
+            if (c.parent_id) {
+                if (map[c.parent_id]) {
+                    map[c.parent_id].children.push(map[c.id]);
+                }
+            } else {
+                roots.push(map[c.id]);
+            }
+        });
+
+        return roots;
     }
 };

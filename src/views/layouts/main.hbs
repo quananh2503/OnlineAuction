@@ -16,7 +16,7 @@
 <body>
 
     <!-- Header / Menu -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
         <div class="container">
             <a class="navbar-brand" href="/">
                 <i class="fa-solid fa-gavel"></i> Auction Pro
@@ -28,86 +28,41 @@
             </button>
 
             <div class="collapse navbar-collapse" id="mainNav">
-                <!-- Categories dropdown -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav primary-nav ms-3 mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/products">Sản phẩm</a>
+                    </li>
                     <li class="nav-item dropdown category-dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
                             Danh mục
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                            {{#each layoutCategories}}
                             <li class="dropdown-submenu">
-                                <a class="dropdown-item dropdown-toggle" href="/products?category=electronics">Điện
-                                    tử</a>
+                                <a class="dropdown-item dropdown-toggle"
+                                    href="/products?category={{this.id}}">{{this.name}}</a>
+                                {{#if this.children.length}}
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="/products?category=electronics-phones">Điện thoại
-                                            di động</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=electronics-laptops">Máy tính
-                                            xách tay</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=electronics-headphones">Tai
-                                            nghe</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=electronics-watches">Đồng
-                                            hồ</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=electronics-monitors">Màn
-                                            hình</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=electronics-tvs">Tivi</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=electronics-accessories">Phụ
-                                            kiện</a></li>
+                                    {{#each this.children}}
+                                    <li><a class="dropdown-item" href="/products?category={{this.id}}">{{this.name}}</a>
+                                    </li>
+                                    {{/each}}
                                 </ul>
+                                {{/if}}
                             </li>
-                            <li class="dropdown-submenu">
-                                <a class="dropdown-item dropdown-toggle" href="/products?category=fashion">Thời
-                                    trang</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="/products?category=fashion-shoes">Giày</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=fashion-watches">Đồng hồ</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="/products?category=fashion-bags">Túi xách</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="/products?category=fashion-clothes">Quần áo</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="dropdown-submenu">
-                                <a class="dropdown-item dropdown-toggle" href="/products?category=books">Nhà sách</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="/products?category=books-novels">Tiểu thuyết</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="/products?category=books-children">Sách thiếu
-                                            nhi</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=books-edu">Sách giáo dục</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="dropdown-submenu">
-                                <a class="dropdown-item dropdown-toggle" href="/products?category=lifestyle">Đời sống &
-                                    Du lịch</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="/products?category=lifestyle-home">Đồ gia
-                                            dụng</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=lifestyle-travel">Du lịch</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="/products?category=lifestyle-health">Sức khỏe</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="dropdown-submenu">
-                                <a class="dropdown-item dropdown-toggle" href="/products?category=vehicles">Ô tô - Xe
-                                    máy</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="/products?category=vehicles-cars">Ô tô</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=vehicles-motorcycles">Xe
-                                            máy</a></li>
-                                    <li><a class="dropdown-item" href="/products?category=vehicles-accessories">Phụ kiện
-                                            xe</a></li>
-                                </ul>
-                            </li>
+                            {{else}}
+                            <li><a class="dropdown-item" href="#">Chưa có danh mục</a></li>
+                            {{/each}}
                         </ul>
                     </li>
                 </ul>
 
                 <!-- Search -> center on large screens -->
-                <form class="d-flex mx-auto w-50" role="search" action="/search" method="GET">
+                <form class="d-flex header-search mx-lg-auto my-2 my-lg-0" role="search" action="/search" method="GET">
                     <input name="q" class="form-control me-2" type="search" placeholder="Tìm sản phẩm, danh mục..."
                         aria-label="Search">
                     <button class="btn btn-outline-light" type="submit"><i class="fa fa-search"></i></button>
@@ -116,31 +71,30 @@
                 <!-- Auth area -->
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     {{#if isAuth}}
-                    {{! Watchlist link - chỉ hiện khi đã đăng nhập }}
+                    {{! Watchlist icon }}
                     <li class="nav-item">
-                        <a class="nav-link position-relative" href="/watchlist/my-watchlist" title="Danh sách theo dõi">
-                            <i class="fas fa-bookmark fa-lg"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                                <span class="visually-hidden">watchlist items</span>
+                        <a class="nav-link position-relative" href="/watchlist/my-watchlist" title="Watchlist">
+                            <i class="fas fa-heart fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                0
+                                <span class="visually-hidden">sản phẩm trong watchlist</span>
                             </span>
                         </a>
                     </li>
+                    
+                    {{! User dropdown }}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenuTop"
                             role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{authUser.name}}
+                            <span>{{authUser.name}}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuTop">
-                            <li><a class="dropdown-item" href="/auth/profile">
-                                <i class="fas fa-user me-2"></i>Tài khoản
-                            </a></li>
-                            <li><a class="dropdown-item" href="/watchlist/my-watchlist">
-                                <i class="fas fa-bookmark me-2"></i>Danh sách theo dõi
-                            </a></li>
+                            <li><a class="dropdown-item" href="/account/profile"><i class="fas fa-user me-2"></i>Tài khoản</a></li>
+                            <li><a class="dropdown-item" href="/watchlist/my-watchlist"><i class="fas fa-heart me-2"></i>Watchlist</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form action="/auth/logout" method="POST" class="d-inline">
-                                    <button type="submit" class="dropdown-item text-danger">
+                                <form action="/auth/logout" method="POST" style="margin: 0;">
+                                    <button type="submit" class="dropdown-item" style="border: none; background: none; cursor: pointer; width: 100%; text-align: left;">
                                         <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
                                     </button>
                                 </form>

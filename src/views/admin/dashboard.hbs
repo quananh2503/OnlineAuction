@@ -1,0 +1,117 @@
+<div class="row">
+    <aside class="col-md-3">
+        {{> categoryMenu}}
+    </aside>
+    
+    <div class="col-md-9">
+        <h2 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Trang quản trị</h2>
+
+        {{! Thống kê đơn giản }}
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-users fa-3x text-primary mb-2"></i>
+                        <h3>{{stats.totalUsers}}</h3>
+                        <p class="text-muted mb-0">Người dùng</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-box fa-3x text-success mb-2"></i>
+                        <h3>{{stats.activeProducts}}</h3>
+                        <p class="text-muted mb-0">Sản phẩm đang bán</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-user-clock fa-3x text-warning mb-2"></i>
+                        <h3>{{stats.pendingBidders}}</h3>
+                        <p class="text-muted mb-0">Chờ duyệt</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-tags fa-3x text-info mb-2"></i>
+                        <h3>{{stats.totalCategories}}</h3>
+                        <p class="text-muted mb-0">Danh mục</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{! Menu quản lý }}
+        <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Chức năng quản lý</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <a href="/admin/categories" class="btn btn-outline-primary w-100 py-3">
+                        <i class="fas fa-tags fa-2x d-block mb-2"></i>
+                        Quản lý danh mục
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/admin/products" class="btn btn-outline-success w-100 py-3">
+                        <i class="fas fa-box fa-2x d-block mb-2"></i>
+                        Quản lý sản phẩm
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/admin/users" class="btn btn-outline-info w-100 py-3">
+                        <i class="fas fa-users fa-2x d-block mb-2"></i>
+                        Quản lý người dùng
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/admin/bidder-requests" class="btn btn-outline-warning w-100 py-3">
+                        <i class="fas fa-user-check fa-2x d-block mb-2"></i>
+                        Duyệt Bidder
+                        {{#if stats.pendingBidders}}
+                        <span class="badge bg-danger ms-2">{{stats.pendingBidders}}</span>
+                        {{/if}}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{! Hoạt động gần đây }}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Hoạt động gần đây</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Người dùng</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each recentActivities}}
+                    <tr>
+                        <td>{{this.time}}</td>
+                        <td>{{this.user}}</td>
+                        <td>{{this.action}}</td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Chưa có hoạt động nào</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

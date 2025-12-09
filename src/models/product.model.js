@@ -1,7 +1,7 @@
 const db = require('../configs/db');
 
 module.exports = {
-    async listAllProducts(){
+    async listAllProducts() {
         const sql = `
         SELECT 
             products.id, 
@@ -28,11 +28,135 @@ module.exports = {
     },
 
 
-    async getProductById(id){
-        const sql = `SELECT * FROM products WHERE id = $1`;
-        const result = await db.query(sql,[id]);
+    async getProductById(id) {
+        const sql = `
+            SELECT p.*, 
+                   u.name as seller_name, 
+                   c.name as category_name,
+                   (SELECT json_agg(url) FROM images WHERE product_id = p.id) as images
+            FROM products p
+            JOIN users u ON p.seller_id = u.id
+            JOIN categories c ON p.category_id = c.id
+            WHERE p.id = $1
+        `;
+        const result = await db.query(sql, [id]);
         return result.rows[0]
     },
+
+    async getTopEnding(limit = 5) {
+        const sql = `
+            SELECT * FROM products 
+            WHERE status = 'ACTIVE' AND ends_at > NOW() 
+            ORDER BY ends_at ASC 
+            LIMIT $1
+        `;
+        const result = await db.query(sql, [limit]);
+        return result.rows;
+    },
+
+    async getTopBids(limit = 5) {
+        const sql = `
+            SELECT * FROM products 
+            WHERE status = 'ACTIVE' 
+            ORDER BY bid_count DESC 
+            LIMIT $1
+        `;
+        const result = await db.query(sql, [limit]);
+        return result.rows;
+    },
+
+    async getTopPrice(limit = 5) {
+        const sql = `
+            SELECT * FROM products 
+            WHERE status = 'ACTIVE' 
+            ORDER BY current_price DESC 
+            LIMIT $1
+        `;
+        const result = await db.query(sql, [limit]);
+        return result.rows;
+    },
+    async filter({ keyword, categoryId, sort, limit, offset }) {
+        const params = [];
+        let paramIndex = 1;
+
+        let sql = `
+            SELECT p.*, 
+                   u.name as seller_name, 
+                   c.name as category_name,
+                   (SELECT name FROM users WHERE id = (
+                       SELECT bidder_id FROM bids WHERE product_id = p.id ORDER BY price DESC LIMIT 1
+                   )) as highest_bidder_name
+            FROM products p
+            JOIN users u ON p.seller_id = u.id
+            JOIN categories c ON p.category_id = c.id
+            WHERE p.status = 'ACTIVE'
+        `;
+
+        if (keyword) {
+            // Full-text search on product name and category name
+            sql += ` AND (to_tsvector('simple', p.name || ' ' || c.name) @@ websearch_to_tsquery('simple', $${paramIndex++}))`;
+            params.push(keyword);
+        }
+
+        if (categoryId) {
+            sql += ` AND (p.category_id = $${paramIndex} OR p.category_id IN (SELECT id FROM categories WHERE parent_id = $${paramIndex}))`;
+            paramIndex++;
+            params.push(categoryId);
+        }
+
+        // Sorting
+        switch (sort) {
+            case 'price_asc':
+                sql += ` ORDER BY p.current_price ASC`;
+                break;
+            case 'price_desc':
+                sql += ` ORDER BY p.current_price DESC`;
+                break;
+            case 'end_asc':
+                sql += ` ORDER BY p.ends_at ASC`;
+                break;
+            case 'bids_desc':
+                sql += ` ORDER BY p.bid_count DESC`;
+                break;
+            case 'end_desc':
+            default:
+                sql += ` ORDER BY p.ends_at DESC`;
+                break;
+        }
+
+        sql += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+        params.push(limit, offset);
+
+        const result = await db.query(sql, params);
+        return result.rows;
+    },
+
+    async count({ keyword, categoryId }) {
+        const params = [];
+        let paramIndex = 1;
+
+        let sql = `
+            SELECT COUNT(*) as total
+            FROM products p
+            JOIN categories c ON p.category_id = c.id
+            WHERE p.status = 'ACTIVE'
+        `;
+
+        if (keyword) {
+            sql += ` AND (to_tsvector('simple', p.name || ' ' || c.name) @@ websearch_to_tsquery('simple', $${paramIndex++}))`;
+            params.push(keyword);
+        }
+
+        if (categoryId) {
+            sql += ` AND (p.category_id = $${paramIndex} OR p.category_id IN (SELECT id FROM categories WHERE parent_id = $${paramIndex}))`;
+            paramIndex++;
+            params.push(categoryId);
+        }
+
+        const result = await db.query(sql, params);
+        return result.rows[0].total;
+    },
+
     async search(searchTerm) {
         // Full-text search trên cột fts (tsvector)
         // Sử dụng websearch_to_tsquery để tìm kiếm giống Google
@@ -46,7 +170,7 @@ module.exports = {
     },
     async create(productData) {
         const client = await db.getClient();
-        
+
         try {
             await client.query('BEGIN');
 
@@ -61,7 +185,7 @@ module.exports = {
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ACTIVE')
                 RETURNING *
             `;
-            
+
             const productResult = await client.query(productSql, [
                 productData.seller_id,
                 productData.category_id,
@@ -99,7 +223,7 @@ module.exports = {
                     INSERT INTO images (product_id, url, type)
                     VALUES ($1, $2, 'SECONDARY')
                 `;
-                
+
                 for (const imageUrl of productData.image_urls) {
                     await client.query(imageSql, [product.id, imageUrl]);
                 }
@@ -116,18 +240,27 @@ module.exports = {
         }
     },
 
-    // Cập nhật status của product
+    // Cập nhật trạng thái sản phẩm
     async updateStatus(productId, status) {
         const sql = `
-            UPDATE products
-            SET status = $1
-            WHERE id = $2
+            UPDATE products 
+            SET status = $2 
+            WHERE id = $1
             RETURNING *
         `;
-        const result = await db.query(sql, [status, productId]);
+        const result = await db.query(sql, [productId, status]);
+        return result.rows[0];
+    },
+
+    // Xóa sản phẩm (hard delete)
+    async deleteProduct(productId) {
+        const sql = `DELETE FROM products WHERE id = $1 RETURNING *`;
+        const result = await db.query(sql, [productId]);
         return result.rows[0];
     }
-};
+    // // 1. Tìm user bằng email (Dùng cho Đăng nhập & check trưng email)
+    // async findByEmail(email) {
+    //     const sql = `SELECT * FROM users WHERE email = $1`;
     //     const result = await db.query(sql, [email]);
     //     return result.rows[0]; // Trả về user hoặc undefined
     // },
@@ -227,4 +360,4 @@ module.exports = {
     //     ]);
     //     return result.rows[0]; 
     // }
-// };
+};

@@ -1,7 +1,47 @@
 const categoryModel = require('../models/category.model');
 const productModel = require('../models/product.model');
+const bidderRequestModel = require('../models/bidder-request.model');
+const userModel = require('../models/user.model');
 
 module.exports = {
+    // Dashboard - Trang chính admin
+    async getDashboard(req, res, next) {
+        try {
+            const db = require('../configs/db');
+            
+            // Thống kê từ database
+            const userCountResult = await db.query('SELECT COUNT(*) FROM users');
+            const productCountResult = await db.query("SELECT COUNT(*) FROM products WHERE status = 'ACTIVE'");
+            const categoryCountResult = await db.query('SELECT COUNT(*) FROM categories');
+            const pendingBidders = await bidderRequestModel.countPending();
+            
+            const stats = {
+                totalUsers: parseInt(userCountResult.rows[0].count),
+                activeProducts: parseInt(productCountResult.rows[0].count),
+                pendingBidders: pendingBidders,
+                totalCategories: parseInt(categoryCountResult.rows[0].count)
+            };
+
+            // Hoạt động gần đây (dữ liệu giả - có thể implement sau)
+            const recentActivities = [
+                { time: '10 phút trước', user: 'Người dùng', action: 'Đăng ký tài khoản mới' },
+                { time: '25 phút trước', user: 'Người bán', action: 'Tạo sản phẩm mới' },
+                { time: '1 giờ trước', user: 'Người dùng', action: 'Yêu cầu nâng cấp Seller' },
+                { time: '2 giờ trước', user: 'Người dùng', action: 'Cập nhật thông tin' }
+            ];
+
+            res.render('admin/dashboard', {
+                stats,
+                recentActivities,
+                isAuth: req.isAuthenticated(),
+                authUser: req.user
+            });
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            next(error);
+        }
+    },
+
     // Hiển thị danh sách categories
     async listCategories(req, res, next) {
         try {
@@ -198,103 +238,77 @@ module.exports = {
             res.redirect('/admin/products?error=' + encodeURIComponent(error.message));
         }
     },
+    async postBidderRequest(req,res,next){
+        try {
+            const { user } = req.user;
+            
+            await bidderRequestModel.create(user.id)
+            
+            
+            res.redirect('/user/profile?success=' + encodeURIComponent('Gửi yêu cầu thành công!'));
+        } catch (error) {
+            console.error('Error removing product:', error);
+            res.redirect('/user/profile?error=' + encodeURIComponent(error.message));
+        }        
+    },
 
-    // Quản lý yêu cầu đăng ký Bidder - Dữ liệu giả
+    // Quản lý yêu cầu đăng ký Bidder
     async listBidderRequests(req, res, next) {
         try {
-            // Dữ liệu giả - Pending requests
-            const pendingRequests = [
-                {
-                    id: 1,
-                    name: 'Nguyễn Văn A',
-                    nameInitial: 'NA',
-                    email: 'nguyenvana@email.com',
-                    rating: 8.5,
-                    stars: [true, true, true, true, true, false, false, false, false, false],
-                    requestDate: '2025-01-15 10:30'
-                },
-                {
-                    id: 2,
-                    name: 'Trần Thị B',
-                    nameInitial: 'TB',
-                    email: 'tranthib@email.com',
-                    rating: 9.2,
-                    stars: [true, true, true, true, true, false, false, false, false, false],
-                    requestDate: '2025-01-16 14:20'
-                },
-                {
-                    id: 3,
-                    name: 'Lê Minh C',
-                    nameInitial: 'LC',
-                    email: 'leminhc@email.com',
-                    rating: 7.8,
-                    stars: [true, true, true, true, false, false, false, false, false, false],
-                    requestDate: '2025-01-17 09:15'
-                },
-                {
-                    id: 4,
-                    name: 'Phạm Thị D',
-                    nameInitial: 'PD',
-                    email: 'phamthid@email.com',
-                    rating: 6.5,
-                    stars: [true, true, true, false, false, false, false, false, false, false],
-                    requestDate: '2025-01-18 11:45'
-                },
-                {
-                    id: 5,
-                    name: 'Hoàng Văn E',
-                    nameInitial: 'HE',
-                    email: 'hoangvane@email.com',
-                    rating: 9.8,
-                    stars: [true, true, true, true, true, false, false, false, false, false],
-                    requestDate: '2025-01-19 16:00'
-                }
-            ];
-
-            // Dữ liệu giả - Approved requests
-            const approvedRequests = [
-                {
-                    id: 6,
-                    name: 'Vũ Thị F',
-                    nameInitial: 'VF',
-                    email: 'vuthif@email.com',
-                    rating: 8.9,
-                    approvedDate: '2025-01-10 14:30',
-                    approvedBy: 'Admin Nguyễn'
-                },
-                {
-                    id: 7,
-                    name: 'Đặng Văn G',
-                    nameInitial: 'DG',
-                    email: 'dangvang@email.com',
-                    rating: 9.5,
-                    approvedDate: '2025-01-12 10:15',
-                    approvedBy: 'Admin Nguyễn'
-                }
-            ];
-
-            // Dữ liệu giả - Rejected requests
-            const rejectedRequests = [
-                {
-                    id: 8,
-                    name: 'Bùi Thị H',
-                    nameInitial: 'BH',
-                    email: 'buithih@email.com',
-                    rating: 5.2,
-                    rejectedDate: '2025-01-08 09:20',
-                    rejectedBy: 'Admin Nguyễn'
-                }
-            ];
+            // Lấy data từ model
+            const pendingRequests = await bidderRequestModel.getBidderRequests('PENDING');
+            const approvedRequests = await bidderRequestModel.getBidderRequests('APPROVED');
+            const rejectedRequests = await bidderRequestModel.getBidderRequests('REJECTED');
+            
+            // Format pending requests
+            const formattedPending = pendingRequests.map(r => {
+                const rating = r.rating >= 0 ? Math.round(r.rating) : 'Chưa có đánh giá';
+                return {    
+                    id: r.id,
+                    name: r.name,
+                    email: r.email,
+                    rating: rating,
+                    requestDate: new Date(r.created_at).toLocaleString('vi-VN')
+                };
+            });
+            
+            // Format approved requests
+            const formattedApproved = approvedRequests.map(r => {
+                const total = (r.rating_positive_count || 0) + (r.rating_negative_count || 0);
+                const rating = total > 0 ? Math.round((r.rating_positive_count / total) * 100) : 0;
+                return {
+                    id: r.id,
+                    name: r.name,
+                    email: r.email,
+                    rating: rating,
+                    approvedDate: new Date(r.approved_at).toLocaleString('vi-VN'),
+                    approvedBy: r.approved_by || 'Admin'
+                };
+            });
+            
+            // Format rejected requests
+            const formattedRejected = rejectedRequests.map(r => {
+                const total = (r.rating_positive_count || 0) + (r.rating_negative_count || 0);
+                const rating = total > 0 ? Math.round((r.rating_positive_count / total) * 100) : 0;
+                return {
+                    id: r.id,
+                    name: r.name,
+                    email: r.email,
+                    rating: rating,
+                    rejectedDate: new Date(r.rejected_at).toLocaleString('vi-VN'),
+                    rejectedBy: r.rejected_by || 'Admin'
+                };
+            });
 
             res.render('admin/bidder-requests', {
-                pendingRequests,
-                approvedRequests,
-                rejectedRequests,
-                pendingCount: pendingRequests.length,
-                approvedCount: approvedRequests.length,
-                rejectedCount: rejectedRequests.length,
-                success_msg: req.query.success,
-                error_msg: req.query.error,
+                pendingRequests: formattedPending,
+                approvedRequests: formattedApproved,
+                rejectedRequests: formattedRejected,
+                pendingCount: formattedPending.length,
+                approvedCount: formattedApproved.length,
+                rejectedCount: formattedRejected.length,
+                success_msg: req.flash('success_msg'),
+                error_msg: req.flash('error_msg'),
                 isAuth: req.isAuthenticated(),
                 authUser: req.user
             });
@@ -304,34 +318,131 @@ module.exports = {
         }
     },
 
-    // Duyệt yêu cầu Bidder (giả)
+    // Duyệt yêu cầu Bidder
     async approveBidderRequest(req, res, next) {
         try {
             const { id } = req.params;
+            const adminId = req.user.id;
             
-            // TODO: Cập nhật role user trong database
-            // await userModel.updateRole(id, 'BIDDER');
+            // Approve request và lấy user_id
+            const result = await bidderRequestModel.approve(id, adminId);
             
-            res.redirect('/admin/bidder-requests?success=' + encodeURIComponent('Đã duyệt yêu cầu thành công!'));
+            if (!result) {
+                req.flash('error_msg', 'Không tìm thấy yêu cầu hoặc đã được xử lý!');
+                return res.redirect('/admin/bidder-requests');
+            }
+            
+            // Cập nhật role user thành SELLER
+            await userModel.updateRole(result.user_id, 'SELLER');
+            
+            req.flash('success_msg', 'Đã duyệt yêu cầu thành công!');
+            res.redirect('/admin/bidder-requests');
         } catch (error) {
             console.error('Error approving bidder request:', error);
-            res.redirect('/admin/bidder-requests?error=' + encodeURIComponent(error.message));
+            req.flash('error_msg', error.message);
+            res.redirect('/admin/bidder-requests');
         }
     },
 
-    // Từ chối yêu cầu Bidder (giả)
+    // Từ chối yêu cầu Bidder
     async rejectBidderRequest(req, res, next) {
         try {
             const { id } = req.params;
             const { reason } = req.body;
+            const adminId = req.user.id;
             
-            // TODO: Cập nhật status yêu cầu trong database
-            // await bidderRequestModel.reject(id, reason);
+            // Reject request
+            const result = await bidderRequestModel.reject(id, adminId, reason || 'Không đủ điều kiện');
             
-            res.redirect('/admin/bidder-requests?success=' + encodeURIComponent('Đã từ chối yêu cầu!'));
+            if (!result) {
+                req.flash('error_msg', 'Không tìm thấy yêu cầu hoặc đã được xử lý!');
+                return res.redirect('/admin/bidder-requests');
+            }
+            
+            req.flash('success_msg', 'Đã từ chối yêu cầu!');
+            res.redirect('/admin/bidder-requests');
         } catch (error) {
             console.error('Error rejecting bidder request:', error);
-            res.redirect('/admin/bidder-requests?error=' + encodeURIComponent(error.message));
+            req.flash('error_msg', error.message);
+            res.redirect('/admin/bidder-requests');
+        }
+    },
+
+    // Quản lý người dùng - Danh sách
+    async listUsers(req, res, next) {
+        try {
+            const { search, role, status } = req.query;
+
+            // Dữ liệu giả - Users
+            const allUsers = [
+                { id: 1, name: 'Nguyễn Văn A', nameInitial: 'NA', email: 'nguyenvana@email.com', role: 'SELLER', status: 'ACTIVE', rating: 8.5, createdAt: '2024-12-01' },
+                { id: 2, name: 'Trần Thị B', nameInitial: 'TB', email: 'tranthib@email.com', role: 'BIDDER', status: 'ACTIVE', rating: 9.2, createdAt: '2024-12-05' },
+                { id: 3, name: 'Lê Minh C', nameInitial: 'LC', email: 'leminhc@email.com', role: 'SELLER', status: 'ACTIVE', rating: 7.8, createdAt: '2024-12-10' },
+                { id: 4, name: 'Phạm Thị D', nameInitial: 'PD', email: 'phamthid@email.com', role: 'BIDDER', status: 'INACTIVE', rating: 6.5, createdAt: '2024-12-15' },
+                { id: 5, name: 'Hoàng Văn E', nameInitial: 'HE', email: 'hoangvane@email.com', role: 'BIDDER', status: 'BANNED', rating: 4.2, createdAt: '2024-11-20' }
+            ];
+
+            // Lọc users (giả)
+            let users = allUsers;
+            
+            if (search) {
+                users = users.filter(u => 
+                    u.name.toLowerCase().includes(search.toLowerCase()) || 
+                    u.email.toLowerCase().includes(search.toLowerCase())
+                );
+            }
+            
+            if (role) {
+                users = users.filter(u => u.role === role);
+            }
+            
+            if (status) {
+                users = users.filter(u => u.status === status);
+            }
+
+            res.render('admin/users', {
+                users,
+                search,
+                role,
+                status,
+                success_msg: req.query.success,
+                error_msg: req.query.error,
+                isAuth: req.isAuthenticated(),
+                authUser: req.user
+            });
+        } catch (error) {
+            console.error('Error listing users:', error);
+            next(error);
+        }
+    },
+
+    // Khóa tài khoản user
+    async banUser(req, res, next) {
+        try {
+            const { id } = req.params;
+            
+            // TODO: Cập nhật status user trong database
+            // await userModel.updateStatus(id, 'BANNED');
+            
+            res.redirect('/admin/users?success=' + encodeURIComponent('Đã khóa tài khoản người dùng!'));
+        } catch (error) {
+            console.error('Error banning user:', error);
+            res.redirect('/admin/users?error=' + encodeURIComponent(error.message));
+        }
+    },
+
+    // Mở khóa tài khoản user
+    async unbanUser(req, res, next) {
+        try {
+            const { id } = req.params;
+            
+            // TODO: Cập nhật status user trong database
+            // await userModel.updateStatus(id, 'ACTIVE');
+            
+            res.redirect('/admin/users?success=' + encodeURIComponent('Đã mở khóa tài khoản người dùng!'));
+        } catch (error) {
+            console.error('Error unbanning user:', error);
+            res.redirect('/admin/users?error=' + encodeURIComponent(error.message));
         }
     }
 };
