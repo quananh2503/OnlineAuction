@@ -83,9 +83,45 @@ async function sendBuyNowNotification({ sellerEmail, buyerEmail, productName, pr
     await Promise.all(promises);
 }
 
+async function sendAuctionWonNotification({ sellerEmail, winnerEmail, productName, priceFormatted, productUrl }) {
+    const promises = [];
+    const subject = `Kết quả đấu giá - ${productName}`;
+
+    if (sellerEmail) {
+        promises.push(transporter.sendMail({
+            from: `"Online Auction" <${process.env.EMAIL_USER}>`,
+            to: sellerEmail,
+            subject,
+            html: `
+                <p>Chúc mừng! Sản phẩm <strong>${productName}</strong> của bạn đã được đấu giá thành công.</p>
+                <p>Giá chốt: <strong>${priceFormatted}</strong></p>
+                <p>Vui lòng liên hệ người thắng để hoàn tất giao dịch.</p>
+                <p><a href="${productUrl}" target="_blank">Xem chi tiết</a></p>
+            `
+        }));
+    }
+
+    if (winnerEmail) {
+        promises.push(transporter.sendMail({
+            from: `"Online Auction" <${process.env.EMAIL_USER}>`,
+            to: winnerEmail,
+            subject,
+            html: `
+                <p>Chúc mừng! Bạn đã thắng đấu giá sản phẩm <strong>${productName}</strong>.</p>
+                <p>Giá chốt: <strong>${priceFormatted}</strong></p>
+                <p>Vui lòng liên hệ người bán để hoàn tất giao dịch.</p>
+                <p><a href="${productUrl}" target="_blank">Xem chi tiết</a></p>
+            `
+        }));
+    }
+
+    await Promise.all(promises);
+}
+
 module.exports = {
     sendVerificationEmail,
     sendQuestionNotification,
     sendAnswerNotification,
-    sendBuyNowNotification
+    sendBuyNowNotification,
+    sendAuctionWonNotification
 };

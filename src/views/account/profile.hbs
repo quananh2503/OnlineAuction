@@ -1,96 +1,173 @@
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-user-circle me-2"></i>Thông tin tài khoản</h4>
+    <div class="row">
+        {{!-- Sidebar --}}
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-4">
+                    <div class="avatar-placeholder mb-3 mx-auto bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 80px; height: 80px; font-size: 32px;">
+                        {{#if user.name}}{{user.name.[0]}}{{else}}U{{/if}}
+                    </div>
+                    <h5 class="card-title mb-1">{{user.name}}</h5>
+                    <p class="text-muted small mb-3">{{user.email}}</p>
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <div class="text-center px-2 border-end">
+                            <div class="fw-bold text-primary">{{bidderRating.stars}} ★</div>
+                            <div class="small text-muted">Mua</div>
+                        </div>
+                        <div class="text-center px-2">
+                            <div class="fw-bold text-success">{{sellerRating.stars}} ★</div>
+                            <div class="small text-muted">Bán</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="/account/profile"
+                        class="list-group-item list-group-item-action {{#if (eq activeTab 'profile')}}active{{/if}}">
+                        <i class="fas fa-user-circle me-2"></i> Hồ sơ & Đánh giá
+                    </a>
+                    <a href="/watchlist/my-watchlist" class="list-group-item list-group-item-action">
+                        <i class="fas fa-heart me-2"></i> Sản phẩm yêu thích
+                    </a>
+                    <a href="/account/bidding"
+                        class="list-group-item list-group-item-action {{#if (eq activeTab 'bidding')}}active{{/if}}">
+                        <i class="fas fa-gavel me-2"></i> Đang đấu giá
+                    </a>
+                    <a href="/account/won"
+                        class="list-group-item list-group-item-action {{#if (eq activeTab 'won')}}active{{/if}}">
+                        <i class="fas fa-trophy me-2"></i> Đã thắng / Đã mua
+                    </a>
+                    <a href="/account/change-password" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key me-2"></i> Đổi mật khẩu
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Main Content --}}
+        <div class="col-lg-9">
+            {{#if success_msg}}
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i>{{success_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+            {{#if error_msg}}
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+
+            {{!-- Profile Info Tab --}}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-primary">Thông tin cá nhân</h5>
                 </div>
                 <div class="card-body">
-                    {{#if success_msg}}
-                    <div class="alert alert-success alert-dismissible fade show">
-                        <i class="fas fa-check-circle me-2"></i>{{success_msg}}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {{/if}}
-
-                    {{#if error_msg}}
-                    <div class="alert alert-danger alert-dismissible fade show">
-                        <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {{/if}}
-
                     <form action="/account/profile" method="POST">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" 
-                                   value="{{user.name}}" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" 
-                                   value="{{user.email}}" disabled>
-                            <small class="text-muted">Email không thể thay đổi</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="address" class="form-label">Địa chỉ</label>
-                            <textarea class="form-control" id="address" name="address" 
-                                      rows="3" placeholder="Nhập địa chỉ của bạn">{{user.address}}</textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Ngày tham gia</label>
-                            <input type="text" class="form-control" 
-                                   value="{{user.created_at}}" disabled>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <a href="/account/change-password" class="btn btn-outline-warning">
-                                <i class="fas fa-key me-2"></i>Đổi mật khẩu
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Lưu thay đổi
-                            </button>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Họ và tên</label>
+                                <input type="text" class="form-control" name="name" value="{{user.name}}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" value="{{user.email}}" disabled>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Địa chỉ</label>
+                                <textarea class="form-control" name="address" rows="2">{{user.address}}</textarea>
+                            </div>
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                            </div>
                         </div>
                     </form>
 
                     {{#if showSellerRequest}}
                     <hr class="my-4">
-                    <div class="alert alert-info">
+                    <div class="alert alert-info mb-0">
                         <h5 class="mb-3"><i class="fas fa-store me-2"></i>Nâng cấp tài khoản Seller</h5>
                         {{#if (eq sellerRequestStatus 'PENDING')}}
-                            <p class="mb-0"><i class="fas fa-clock me-2"></i>Yêu cầu nâng cấp lên Seller đang chờ admin duyệt...</p>
+                        <p class="mb-0"><i class="fas fa-clock me-2"></i>Yêu cầu nâng cấp lên Seller đang chờ admin
+                            duyệt...</p>
                         {{else if (eq sellerRequestStatus 'REJECTED')}}
-                            <p class="mb-3"><i class="fas fa-times-circle me-2"></i>Yêu cầu nâng cấp lên Seller đã bị từ chối.</p>
-                            <form action="/account/request-seller" method="POST">
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fas fa-redo me-2"></i>Gửi lại yêu cầu
-                                </button>
-                            </form>
+                        <p class="mb-3"><i class="fas fa-times-circle me-2"></i>Yêu cầu nâng cấp lên Seller đã bị từ
+                            chối.</p>
+                        <form action="/account/request-seller" method="POST">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-redo me-2"></i>Gửi lại yêu cầu
+                            </button>
+                        </form>
                         {{else}}
-                            <p class="mb-3">Trở thành Seller để có thể đăng bán sản phẩm trên hệ thống.</p>
-                            <form action="/account/request-seller" method="POST">
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fas fa-paper-plane me-2"></i>Yêu cầu trở thành Seller
-                                </button>
-                            </form>
+                        <p class="mb-3">Trở thành Seller để có thể đăng bán sản phẩm trên hệ thống.</p>
+                        <form action="/account/request-seller" method="POST">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-paper-plane me-2"></i>Yêu cầu trở thành Seller
+                            </button>
+                        </form>
                         {{/if}}
                     </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            {{!-- Ratings Tab --}}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-primary">Đánh giá từ cộng đồng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-4 justify-content-center">
+                        <div class="col-md-6 {{#if (eq user.role 'SELLER')}}border-end{{/if}}">
+                            <h6 class="text-muted text-uppercase small">Điểm uy tín (Mua)</h6>
+                            <div class="display-6 fw-bold text-primary">
+                                {{#if bidderRating.total}}{{bidderRating.ratio}}%{{else}}(0){{/if}}
+                            </div>
+                            <div class="small text-muted">{{bidderRating.total}} lượt đánh giá</div>
+                        </div>
+                        {{#if (eq user.role 'SELLER')}}
+                        <div class="col-md-6">
+                            <h6 class="text-muted text-uppercase small">Điểm uy tín (Bán)</h6>
+                            <div class="display-6 fw-bold text-success">
+                                {{#if sellerRating.total}}{{sellerRating.ratio}}%{{else}}(0){{/if}}
+                            </div>
+                            <div class="small text-muted">{{sellerRating.total}} lượt đánh giá</div>
+                        </div>
+                        {{/if}}
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-2 mb-3">Nhận xét gần đây</h6>
+                    {{#if ratings.length}}
+                    <div class="list-group list-group-flush">
+                        {{#each ratings}}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="mb-1">
+                                        {{#if isPositive}}
+                                        <span class="badge bg-success me-2"><i class="fas fa-thumbs-up"></i> +1</span>
+                                        {{else}}
+                                        <span class="badge bg-danger me-2"><i class="fas fa-thumbs-down"></i> -1</span>
+                                        {{/if}}
+                                        <span class="fw-bold">{{rater}}</span>
+                                        <span class="text-muted small mx-1">đã đánh giá về giao dịch</span>
+                                        <a href="/products/{{productId}}"
+                                            class="text-decoration-none">{{productName}}</a>
+                                    </div>
+                                    <p class="mb-1 text-muted fst-italic">"{{content}}"</p>
+                                </div>
+                                <small class="text-muted">{{date}}</small>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                    {{else}}
+                    <div class="text-center text-muted py-3">Chưa có đánh giá nào.</div>
                     {{/if}}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-.card {
-    border-radius: 10px;
-}
-
-.card-header {
-    border-radius: 10px 10px 0 0;
-}
-</style>

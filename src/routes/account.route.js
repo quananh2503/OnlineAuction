@@ -1,26 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
+const accountController = require('../controllers/account.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
 // Tất cả routes /account/* đều yêu cầu đăng nhập
 router.use(authMiddleware.isAuthenticated);
 
-// Profile
-router.get('/profile', authController.getProfile);
-router.post('/profile', authController.postProfile);
+// Profile Dashboard
+router.get('/profile', accountController.getProfile);
+router.post('/profile', accountController.postProfile);
+
+// Bidding List
+router.get('/bidding', accountController.getBidding);
+
+// Won List & Ratings
+router.get('/won', accountController.getWon);
+router.post('/rate', accountController.postRating);
 
 // Change Password
 router.get('/change-password', authController.getChangePassword);
 router.post('/change-password', authController.postChangePassword);
 
 // Request Seller
-// /account/request-seller"
-router.post('/request-seller', (req, res, next) => {
-    console.log('🚀 Route /account/request-seller được gọi!');
-    console.log('Method:', req.method);
-    console.log('URL:', req.originalUrl);
-    next();
-}, authController.postRequestSeller);
+router.post('/request-seller', authController.postRequestSeller);
 
 module.exports = router;

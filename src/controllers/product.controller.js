@@ -62,7 +62,12 @@ async function fetchWatchlistIds(userId) {
 }
 
 function mapListProduct(product, watchlisted) {
-    const suggestedBidValue = (product.current_price || product.starting_price) + product.price_step;
+    const currentPrice = Number(product.current_price);
+    const startingPrice = Number(product.starting_price);
+    const priceStep = Number(product.price_step);
+    const basePrice = (!isNaN(currentPrice) && currentPrice > 0) ? currentPrice : startingPrice;
+    const suggestedBidValue = basePrice + priceStep;
+
     return {
         id: product.id,
         title: product.name,
@@ -84,11 +89,11 @@ async function loadProductDetail(productId, currentUserId) {
     const productSql = `
         SELECT p.*, c.name AS category_name,
                s.name AS seller_name, s.email AS seller_email,
-               s.rating_positive_count AS seller_rating_positive,
-               s.rating_negative_count AS seller_rating_negative,
+               s.seller_positive_ratings_count AS seller_rating_positive,
+               (s.seller_total_ratings_count - s.seller_positive_ratings_count) AS seller_rating_negative,
                w.name AS highest_bidder_name,
-               w.rating_positive_count AS highest_bidder_positive,
-               w.rating_negative_count AS highest_bidder_negative
+               w.bidder_positive_ratings_count AS highest_bidder_positive,
+               (w.bidder_total_ratings_count - w.bidder_positive_ratings_count) AS highest_bidder_negative
         FROM products p
         JOIN categories c ON p.category_id = c.id
         JOIN users s ON p.seller_id = s.id
@@ -137,7 +142,12 @@ async function loadProductDetail(productId, currentUserId) {
     const gallery = imagesRes.rows.length ? imagesRes.rows.map((img) => img.url) : [product.avatar_url];
     const description = descRes.rows[0]?.content || 'Chưa có mô tả chi tiết.';
     const showRelative = (new Date(product.ends_at).getTime() - Date.now()) <= (3 * 24 * 60 * 60 * 1000);
-    const suggestedBidValue = (product.current_price || product.starting_price) + product.price_step;
+
+    const currentPrice = Number(product.current_price);
+    const startingPrice = Number(product.starting_price);
+    const priceStep = Number(product.price_step);
+    const basePrice = (!isNaN(currentPrice) && currentPrice > 0) ? currentPrice : startingPrice;
+    const suggestedBidValue = basePrice + priceStep;
 
     return {
         product: {
@@ -146,6 +156,7 @@ async function loadProductDetail(productId, currentUserId) {
             avatarUrl: product.avatar_url,
             gallery,
             currentPriceFormatted: formatMoney(product.current_price),
+            startingPriceFormatted: formatMoney(product.starting_price),
             currentPriceValue: product.current_price,
             buyNowPriceValue: product.buy_now_price,
             buyNowPriceFormatted: product.buy_now_price ? formatMoney(product.buy_now_price) : null,
@@ -403,8 +414,12 @@ async function placeBid(req, res, next) {
             return respondWithFallback(req, res, `/products/${productId}`, { success: false, message: eligibility.message }, 400);
         }
 
-        const basePrice = product.current_price || product.starting_price;
-        const suggested = basePrice + product.price_step;
+        const currentPrice = Number(product.current_price);
+        const startingPrice = Number(product.starting_price);
+        const priceStep = Number(product.price_step);
+        const basePrice = (!isNaN(currentPrice) && currentPrice > 0) ? currentPrice : startingPrice;
+        const suggested = basePrice + priceStep;
+
         if (bidAmount < suggested) {
             await client.query('ROLLBACK');
             return respondWithFallback(req, res, `/products/${productId}`, {

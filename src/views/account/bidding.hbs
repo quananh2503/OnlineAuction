@@ -1,0 +1,83 @@
+<div class="container py-5">
+    <div class="row">
+        {{!-- Sidebar --}}
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="list-group list-group-flush">
+                    <a href="/account/profile" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-circle me-2"></i> Hồ sơ & Đánh giá
+                    </a>
+                    <a href="/watchlist/my-watchlist" class="list-group-item list-group-item-action">
+                        <i class="fas fa-heart me-2"></i> Sản phẩm yêu thích
+                    </a>
+                    <a href="/account/bidding" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-gavel me-2"></i> Đang đấu giá
+                    </a>
+                    <a href="/account/won" class="list-group-item list-group-item-action">
+                        <i class="fas fa-trophy me-2"></i> Đã thắng / Đã mua
+                    </a>
+                    <a href="/account/change-password" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key me-2"></i> Đổi mật khẩu
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Main Content --}}
+        <div class="col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-primary">Sản phẩm đang đấu giá</h5>
+                </div>
+                <div class="card-body p-0">
+                    {{#if products.length}}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Sản phẩm</th>
+                                    <th>Giá hiện tại</th>
+                                    <th>Giá bạn đặt</th>
+                                    <th>Trạng thái</th>
+                                    <th>Kết thúc</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each products}}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{image}}" alt="{{name}}" class="rounded me-3"
+                                                style="width: 50px; height: 50px; object-fit: cover;">
+                                            <a href="/products/{{id}}"
+                                                class="text-decoration-none fw-bold text-dark text-truncate"
+                                                style="max-width: 200px;">{{name}}</a>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold text-primary">{{currentPrice}}</td>
+                                    <td class="text-muted">{{myBid}}</td>
+                                    <td>
+                                        {{#if isWinning}}
+                                        <span class="badge bg-success">Đang dẫn đầu</span>
+                                        {{else}}
+                                        <span class="badge bg-warning text-dark">Bị vượt</span>
+                                        {{/if}}
+                                    </td>
+                                    <td class="small text-muted">{{endsRelative}}</td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <i class="fas fa-gavel fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Bạn chưa tham gia đấu giá sản phẩm nào.</p>
+                        <a href="/products" class="btn btn-primary">Tìm sản phẩm ngay</a>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

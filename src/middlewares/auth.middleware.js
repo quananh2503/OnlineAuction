@@ -1,10 +1,20 @@
+const db = require('../configs/db');
+
 module.exports = {
     // Middleware kiểm tra đã đăng nhập chưa
-    isAuthenticated(req, res, next) {
+    async isAuthenticated(req, res, next) {
         if (req.isAuthenticated()) {
+            // Nếu đã đăng nhập, lấy số lượng watchlist
+            try {
+                const { rows } = await db.query('SELECT COUNT(*) FROM watchlists WHERE user_id = $1', [req.user.id]);
+                res.locals.watchlistCount = rows[0].count;
+            } catch (error) {
+                console.error('Error fetching watchlist count:', error);
+                res.locals.watchlistCount = 0;
+            }
             return next(); // Đã đăng nhập -> Cho đi tiếp
         }
-        
+
         // Chưa đăng nhập -> Lưu URL hiện tại và chuyển về login
         req.session.returnTo = req.originalUrl;
         res.redirect('/auth/login');
@@ -15,7 +25,7 @@ module.exports = {
         if (!req.isAuthenticated()) {
             return next(); // Chưa đăng nhập -> Cho đi tiếp
         }
-        
+
         // Đã đăng nhập rồi -> Về trang chủ
         res.redirect('/');
     },

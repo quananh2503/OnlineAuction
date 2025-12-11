@@ -15,12 +15,19 @@ function maskName(name) {
     if (!name) {
         return '****';
     }
-    const trimmed = `${name}`.trim();
+    const trimmed = String(name).trim();
     if (!trimmed) {
         return '****';
     }
-    const first = trimmed.charAt(0);
-    return `${first}${'*'.repeat(Math.max(trimmed.length - 1, 3))}`;
+    const len = trimmed.length;
+
+    if (len <= 1) return trimmed;
+
+    const visibleLen = Math.ceil(len / 2);
+    const maskedLen = len - visibleLen;
+
+    // Show last part: "****me"
+    return `${'*'.repeat(maskedLen)}${trimmed.substring(maskedLen)}`;
 }
 
 function ratingSummary(positive = 0, negative = 0) {

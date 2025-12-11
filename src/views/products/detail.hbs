@@ -1,219 +1,311 @@
 <link rel="stylesheet" href="/css/product.css">
 
-<div class="product-hero p-4">
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="product-gallery-main mb-3">
-                <img src="{{product.avatarUrl}}" alt="{{product.name}}" class="img-fluid shadow-sm">
-            </div>
-            <div class="row g-2 product-gallery-thumbs">
-                {{#each product.gallery}}
-                <div class="col-3">
-                    <img src="{{this}}" alt="{{../product.name}}">
-                </div>
-                {{/each}}
-            </div>
+{{!-- Top Section: Images & Main Info --}}
+<div class="row g-4 mb-5">
+    {{!-- Left: Images --}}
+    <div class="col-lg-5">
+        <div class="product-gallery-main mb-3">
+            <img src="{{product.avatarUrl}}" alt="{{product.name}}" class="img-fluid rounded shadow-sm w-100"
+                style="object-fit: cover; height: 400px;">
         </div>
-        <div class="col-lg-6">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                    <h2 class="mb-1">{{product.name}}</h2>
-                    <p class="text-muted mb-0">Danh mục: {{product.categoryName}}</p>
-                </div>
-                <form method="POST"
-                    action="{{#if product.watchlisted}}/watchlist/{{product.id}}/remove{{else}}/watchlist/{{product.id}}/add{{/if}}">
-                    {{#if isAuth}}
-                    <button class="btn btn-outline-secondary btn-sm" type="submit">
-                        {{#if product.watchlisted}}<i class="fas fa-heart-broken"></i> Bỏ yêu thích{{else}}<i
-                            class="far fa-heart"></i> Lưu yêu thích{{/if}}
-                    </button>
-                    {{else}}
-                    <button class="btn btn-outline-secondary btn-sm" type="button" disabled>
-                        <i class="far fa-heart"></i> Đăng nhập để lưu
-                    </button>
-                    {{/if}}
-                </form>
+        <div class="row g-2 product-gallery-thumbs">
+            {{#each product.gallery}}
+            <div class="col-3">
+                <img src="{{this}}" alt="{{../product.name}}" class="img-thumbnail"
+                    style="cursor: pointer; height: 80px; object-fit: cover;">
             </div>
+            {{/each}}
+        </div>
+    </div>
 
-            <div class="card product-price-card mb-3">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="text-uppercase small text-white-50">Giá hiện tại</div>
-                            <div class="current-price">{{product.currentPriceFormatted}}</div>
-                        </div>
-                        {{#if product.buyNowPriceFormatted}}
-                        <div>
-                            <div class="text-uppercase small text-white-50">Mua ngay</div>
-                            <div class="h4 mb-0">{{product.buyNowPriceFormatted}}</div>
+    {{!-- Right: Info & Actions --}}
+    <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h1 class="h2 fw-bold mb-0">{{product.name}}</h1>
+            {{!-- Watchlist Button --}}
+            <form method="POST"
+                action="{{#if product.watchlisted}}/watchlist/{{product.id}}/remove{{else}}/watchlist/{{product.id}}/add{{/if}}">
+                {{#if isAuth}}
+                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                    {{#if product.watchlisted}}<i class="fas fa-heart-broken"></i>{{else}}<i
+                        class="far fa-heart"></i>{{/if}}
+                </button>
+                {{else}}
+                <button class="btn btn-outline-secondary btn-sm" type="button" disabled>
+                    <i class="far fa-heart"></i>
+                </button>
+                {{/if}}
+            </form>
+        </div>
+
+        <div class="mb-3">
+            <span class="badge bg-warning text-dark fs-6">{{product.endsRelative}}</span>
+            <span class="text-muted ms-2">Lượt đấu: {{product.bidCount}}</span>
+        </div>
+
+        {{!-- Price Section --}}
+        <div class="d-flex align-items-end mb-4">
+            <div class="me-4">
+                <div class="text-muted small text-uppercase">Giá hiện tại</div>
+                <div class="text-primary fw-bold display-6">{{product.currentPriceFormatted}}</div>
+            </div>
+            {{#if product.buyNowPriceFormatted}}
+            <div>
+                <div class="text-muted small text-uppercase">Mua ngay</div>
+                <div class="text-success fw-bold h4 mb-1">{{product.buyNowPriceFormatted}}</div>
+            </div>
+            {{/if}}
+        </div>
+
+        {{!-- Seller & Bidder Info --}}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card bg-light border-0 h-100">
+                    <div class="card-body p-3">
+                        <div class="small text-muted mb-1">Người bán</div>
+                        <div class="fw-bold">{{product.seller.name}}</div>
+                        {{#if product.seller.ratingStars}}
+                        <div class="small text-warning">
+                            ★ {{product.seller.ratingStars}} <span
+                                class="text-muted">({{product.seller.ratingTotal}})</span>
                         </div>
                         {{/if}}
                     </div>
-                    <div class="mt-3 small text-white-75">
-                        <div>Bước giá: {{product.priceStep}}</div>
-                        <div>Giá đề nghị: {{product.suggestedBidFormatted}}</div>
-                        <div>Lượt đấu: {{product.bidCount}}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-light border-0 h-100">
+                    <div class="card-body p-3">
+                        <div class="small text-muted mb-1">Bidder cao nhất</div>
+                        {{#if product.highestBidder}}
+                        <div class="fw-bold">{{product.highestBidder.nameMasked}}</div>
+                        {{#if product.highestBidder.ratingStars}}
+                        <div class="small text-warning">
+                            ★ {{product.highestBidder.ratingStars}} <span
+                                class="text-muted">({{product.highestBidder.ratingTotal}})</span>
+                        </div>
+                        {{/if}}
+                        {{else}}
+                        <div class="text-muted fst-italic">Chưa có</div>
+                        {{/if}}
                     </div>
                 </div>
             </div>
+        </div>
 
-            <ul class="product-meta-list small mb-3">
-                <li><strong>Người bán:</strong> {{product.seller.name}}
-                    {{#if product.seller.ratingStars}}
-                    <span class="text-warning">★ {{product.seller.ratingStars}}</span>
-                    ({{product.seller.ratingTotal}} đánh giá)
-                    {{/if}}
-                </li>
-                {{#if product.highestBidder}}
-                <li><strong>Bidder dẫn đầu:</strong> {{product.highestBidder.nameMasked}}
-                    {{#if product.highestBidder.ratingStars}}
-                    <span class="text-warning">★ {{product.highestBidder.ratingStars}}</span>
-                    ({{product.highestBidder.ratingTotal}} đánh giá)
-                    {{/if}}
-                </li>
-                {{/if}}
-                <li><strong>Đăng lúc:</strong> {{product.postedAt}}</li>
-                <li><strong>Kết thúc:</strong> {{product.endsDisplay}}</li>
-            </ul>
+        {{!-- Actions --}}
+        {{#unless isAuth}}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i> Bạn cần <a href="/auth/login" class="alert-link">đăng nhập</a> để
+            đấu giá.
+        </div>
+        {{/unless}}
 
-            {{#unless isAuth}}
-            <div class="alert alert-warning">Bạn cần đăng nhập để thực hiện mua ngay hoặc đặt giá.</div>
-            {{/unless}}
-            {{#if product.isSeller}}
-            <div class="alert alert-info">Bạn là người bán của sản phẩm này.</div>
+        {{#if product.isSeller}}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Bạn là người bán của sản phẩm này.
+        </div>
+        {{/if}}
+
+        <div class="d-grid gap-2">
+            {{#if product.canBid}}
+            <form method="POST" action="/products/{{product.id}}/bid" onsubmit="return confirm('Xác nhận đặt giá?');">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-white text-muted">$</span>
+                    <input type="number" step="{{product.priceStepRaw}}" min="{{product.suggestedBidValue}}"
+                        value="{{product.suggestedBidValue}}" name="amount" class="form-control fw-bold" required>
+                    <button class="btn btn-primary px-4" type="submit">Đặt giá</button>
+                </div>
+                <div class="form-text mt-1">
+                    Bước giá: {{product.priceStep}} | Tối thiểu: {{product.suggestedBidFormatted}}
+                </div>
+            </form>
             {{/if}}
 
-            <div class="bid-actions">
-                {{#if product.canBid}}
-                <form method="POST" action="/products/{{product.id}}/bid"
-                    onsubmit="return confirm('Xác nhận đặt giá?');" class="card card-body mb-2">
-                    <label class="form-label">Nhập giá của bạn</label>
-                    <div class="input-group mb-2">
-                        <input type="number" step="{{product.priceStepRaw}}" min="{{product.suggestedBidValue}}"
-                            value="{{product.suggestedBidValue}}" name="amount" class="form-control" required>
-                        <button class="btn btn-dark" type="submit"><i class="fas fa-gavel"></i> Đấu giá</button>
-                    </div>
-                    <small class="text-muted">Tối thiểu: {{product.suggestedBidFormatted}}</small>
-                </form>
+            {{#if product.canBuyNow}}
+            <form method="POST" action="/products/{{product.id}}/buy-now"
+                onsubmit="return confirm('Xác nhận mua ngay?');">
+                <button class="btn btn-outline-success btn-lg w-100" type="submit">
+                    Mua ngay với giá {{product.buyNowPriceFormatted}}
+                </button>
+            </form>
+            {{/if}}
+        </div>
+    </div>
+</div>
+
+{{!-- Middle Section: Description & Sidebar --}}
+<div class="row g-4">
+    {{!-- Left: Description & Q&A --}}
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold text-primary">Mô tả sản phẩm</h5>
+            </div>
+            <div class="card-body">
+                {{{product.description}}}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-primary">Hỏi đáp</h5>
+                {{#if isAuth}}
+                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#askForm">
+                    Đặt câu hỏi
+                </button>
+                {{/if}}
+            </div>
+            <div class="card-body">
+                {{#if isAuth}}
+                <div class="collapse mb-3" id="askForm">
+                    <form method="POST" action="/products/{{product.id}}/questions"
+                        onsubmit="return confirm('Gửi câu hỏi?');">
+                        <div class="input-group">
+                            <input type="text" name="content" class="form-control" placeholder="Nhập câu hỏi của bạn..."
+                                required>
+                            <button class="btn btn-primary" type="submit">Gửi</button>
+                        </div>
+                    </form>
+                </div>
                 {{/if}}
 
-                {{#if product.canBuyNow}}
-                <form method="POST" action="/products/{{product.id}}/buy-now"
-                    onsubmit="return confirm('Xác nhận mua ngay sản phẩm này?');">
-                    <button class="btn btn-success w-100" type="submit"><i class="fas fa-bolt"></i> Mua ngay
-                        {{product.buyNowPriceFormatted}}</button>
-                </form>
+                <div class="question-list">
+                    {{#if questions.length}}
+                    {{#each questions}}
+                    <div class="mb-3 pb-3 border-bottom last-no-border">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold">{{askerName}}</span>
+                            <span class="small text-muted">{{createdAt}}</span>
+                        </div>
+                        <p class="mb-2">{{content}}</p>
+
+                        {{#if answerContent}}
+                        <div class="bg-light p-3 rounded-3 ms-4 border-start border-4 border-primary">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold text-primary">Người bán trả lời</span>
+                                <span class="small text-muted">{{answeredAt}}</span>
+                            </div>
+                            <p class="mb-0">{{answerContent}}</p>
+                        </div>
+                        {{else}}
+                        {{#if ../product.isSeller}}
+                        <form method="POST" action="/products/{{../product.id}}/questions/{{id}}/answer"
+                            class="ms-4 mt-2">
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="answer" class="form-control" placeholder="Trả lời..." required>
+                                <button class="btn btn-secondary" type="submit">Gửi</button>
+                            </div>
+                        </form>
+                        {{else}}
+                        <div class="ms-4 text-muted small fst-italic">Chưa có câu trả lời</div>
+                        {{/if}}
+                        {{/if}}
+                    </div>
+                    {{/each}}
+                    {{else}}
+                    <div class="text-center text-muted py-3">Chưa có câu hỏi nào.</div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- Right: Sidebar (History & Details) --}}
+    <div class="col-lg-4">
+        {{!-- Auction Details --}}
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Thông tin đấu giá</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Ngày đăng</span>
+                    <span class="fw-medium">{{product.postedAt}}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Kết thúc</span>
+                    <span class="fw-medium">{{product.endsRelative}}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Giá khởi điểm</span>
+                    <span class="fw-medium">{{product.startingPriceFormatted}}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Bước giá</span>
+                    <span class="fw-medium">{{product.priceStep}}</span>
+                </li>
+            </ul>
+        </div>
+
+        {{!-- Bid History --}}
+        <div class="card">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Lịch sử đấu giá</h5>
+            </div>
+            <div class="card-body p-0">
+                {{#if bidHistory.length}}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Người đấu</th>
+                                <th>Giá</th>
+                                <th class="text-end pe-3">Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each bidHistory}}
+                            <tr>
+                                <td class="ps-3">{{bidder}}</td>
+                                <td class="fw-bold text-primary">{{priceFormatted}}</td>
+                                <td class="text-end pe-3 small text-muted">{{time}}</td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                {{else}}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-history fa-2x mb-2"></i>
+                    <p class="mb-0">Chưa có lượt đấu giá nào.</p>
+                </div>
                 {{/if}}
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-8">
-        <section class="mb-4">
-            <h4>Mô tả sản phẩm</h4>
-            <p>{{product.description}}</p>
-        </section>
-
-        <section class="mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h4>Câu hỏi &amp; Trả lời</h4>
-                {{#if isAuth}}
-                <form class="d-flex gap-2" method="POST" action="/products/{{product.id}}/questions"
-                    onsubmit="return confirm('Gửi câu hỏi đến người bán?');">
-                    <input type="text" name="content" class="form-control" placeholder="Nội dung câu hỏi" required>
-                    <button class="btn btn-primary" type="submit">Gửi</button>
-                </form>
-                {{/if}}
-            </div>
-            {{#unless isAuth}}
-            <div class="alert alert-secondary">Đăng nhập để đặt câu hỏi cho người bán.</div>
-            {{/unless}}
-            <div class="question-list">
-                {{#if questions.length}}
-                {{#each questions}}
-                <div class="question-item">
-                    <div class="fw-semibold">{{askerName}} hỏi <span class="text-muted">({{createdAt}})</span></div>
-                    <p class="mb-1">{{content}}</p>
-                    {{#if answerContent}}
-                    <div class="bg-light p-2 rounded">
-                        <div class="small text-muted">Người bán trả lời {{#if answeredAt}}({{answeredAt}}){{/if}}</div>
-                        <p class="mb-0">{{answerContent}}</p>
-                    </div>
-                    {{else}}
-                    {{#if ../product.isSeller}}
-                    <form method="POST" action="/products/{{../product.id}}/questions/{{id}}/answer" class="mt-2"
-                        onsubmit="return confirm('Gửi câu trả lời?');">
-                        <div class="input-group">
-                            <input type="text" name="answer" class="form-control" placeholder="Nhập câu trả lời"
-                                required>
-                            <button class="btn btn-outline-primary" type="submit">Trả lời</button>
-                        </div>
-                    </form>
-                    {{else}}
-                    <div class="text-muted small">Đang chờ người bán trả lời...</div>
-                    {{/if}}
+{{!-- Bottom: Related Products --}}
+<div class="mt-5">
+    <h3 class="mb-4 fw-bold border-bottom pb-2">Sản phẩm liên quan</h3>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        {{#if relatedProducts.length}}
+        {{#each relatedProducts}}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-shadow transition">
+                <div class="position-relative">
+                    <img src="{{image}}" class="card-img-top" alt="{{name}}" style="height: 200px; object-fit: cover;">
+                    {{#if isNew}}
+                    <span class="position-absolute top-0 start-0 badge bg-danger m-2">Mới</span>
                     {{/if}}
                 </div>
-                {{/each}}
-                {{else}}
-                <div class="text-muted">Chưa có câu hỏi nào.</div>
-                {{/if}}
-            </div>
-        </section>
-
-        <section>
-            <h4>Lịch sử đấu giá</h4>
-            {{#if bidHistory.length}}
-            <div class="table-responsive">
-                <table class="table table-sm bid-history-table">
-                    <thead>
-                        <tr>
-                            <th>Thời điểm</th>
-                            <th>Người mua</th>
-                            <th>Giá</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{#each bidHistory}}
-                        <tr>
-                            <td>{{time}}</td>
-                            <td>{{bidder}}</td>
-                            <td>{{priceFormatted}}</td>
-                        </tr>
-                        {{/each}}
-                    </tbody>
-                </table>
-            </div>
-            {{else}}
-            <div class="text-muted">Chưa có lượt đấu giá nào.</div>
-            {{/if}}
-        </section>
-    </div>
-
-    <div class="col-lg-4">
-        <section class="mb-4">
-            <h4>Sản phẩm liên quan</h4>
-            <div class="row row-cols-1 g-3 related-products">
-                {{#if relatedProducts.length}}
-                {{#each relatedProducts}}
-                <div class="col">
-                    <div class="card">
-                        <img src="{{image}}" class="card-img-top" alt="{{name}}">
-                        <div class="card-body">
-                            <h6 class="card-title text-truncate">{{name}}</h6>
-                            <p class="mb-1 fw-semibold">{{priceFormatted}}</p>
-                            <p class="text-muted small">Còn lại: {{endsText}}</p>
-                            <a href="/products/{{id}}" class="btn btn-outline-primary btn-sm w-100">Xem</a>
-                        </div>
+                <div class="card-body">
+                    <h6 class="card-title text-truncate"><a href="/products/{{id}}"
+                            class="text-decoration-none text-dark stretched-link">{{name}}</a></h6>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="fw-bold text-primary">{{priceFormatted}}</span>
+                        <small class="text-muted">{{endsText}}</small>
                     </div>
                 </div>
-                {{/each}}
-                {{else}}
-                <div class="text-muted">Chưa có sản phẩm tương tự.</div>
-                {{/if}}
             </div>
-        </section>
+        </div>
+        {{/each}}
+        {{else}}
+        <div class="col-12">
+            <p class="text-muted">Không có sản phẩm liên quan.</p>
+        </div>
+        {{/if}}
     </div>
 </div>

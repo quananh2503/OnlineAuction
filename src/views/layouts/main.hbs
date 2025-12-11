@@ -75,13 +75,14 @@
                     <li class="nav-item">
                         <a class="nav-link position-relative" href="/watchlist/my-watchlist" title="Watchlist">
                             <i class="fas fa-heart fa-lg"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                0
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{#if watchlistCount}}{{watchlistCount}}{{else}}0{{/if}}
                                 <span class="visually-hidden">sản phẩm trong watchlist</span>
                             </span>
                         </a>
                     </li>
-                    
+
                     {{! User dropdown }}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenuTop"
@@ -89,12 +90,21 @@
                             <span>{{authUser.name}}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuTop">
-                            <li><a class="dropdown-item" href="/account/profile"><i class="fas fa-user me-2"></i>Tài khoản</a></li>
-                            <li><a class="dropdown-item" href="/watchlist/my-watchlist"><i class="fas fa-heart me-2"></i>Watchlist</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/account/profile"><i class="fas fa-user me-2"></i>Tài
+                                    khoản</a></li>
+                            <li><a class="dropdown-item" href="/watchlist/my-watchlist"><i
+                                        class="fas fa-heart me-2"></i>Watchlist</a></li>
+                            <li><a class="dropdown-item" href="/account/bidding"><i class="fas fa-gavel me-2"></i>Đang
+                                    đấu giá</a></li>
+                            <li><a class="dropdown-item" href="/account/won"><i class="fas fa-trophy me-2"></i>Đã thắng
+                                    / Đã mua</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <form action="/auth/logout" method="POST" style="margin: 0;">
-                                    <button type="submit" class="dropdown-item" style="border: none; background: none; cursor: pointer; width: 100%; text-align: left;">
+                                    <button type="submit" class="dropdown-item"
+                                        style="border: none; background: none; cursor: pointer; width: 100%; text-align: left;">
                                         <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
                                     </button>
                                 </form>

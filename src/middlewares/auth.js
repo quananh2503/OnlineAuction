@@ -19,7 +19,8 @@ async function ensureBidderRating(req, res, next) {
     }
     try {
         const sql = `
-            SELECT rating_positive_count, rating_negative_count
+            SELECT bidder_positive_ratings_count AS rating_positive_count, 
+                   (bidder_total_ratings_count - bidder_positive_ratings_count) AS rating_negative_count
             FROM users
             WHERE id = $1
         `;

@@ -1,0 +1,153 @@
+<div class="container py-5">
+    <div class="row">
+        {{!-- Sidebar --}}
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="list-group list-group-flush">
+                    <a href="/account/profile" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-circle me-2"></i> Hồ sơ & Đánh giá
+                    </a>
+                    <a href="/watchlist/my-watchlist" class="list-group-item list-group-item-action">
+                        <i class="fas fa-heart me-2"></i> Sản phẩm yêu thích
+                    </a>
+                    <a href="/account/bidding" class="list-group-item list-group-item-action">
+                        <i class="fas fa-gavel me-2"></i> Đang đấu giá
+                    </a>
+                    <a href="/account/won" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-trophy me-2"></i> Đã thắng / Đã mua
+                    </a>
+                    <a href="/account/change-password" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key me-2"></i> Đổi mật khẩu
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Main Content --}}
+        <div class="col-lg-9">
+            {{#if success_msg}}
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i>{{success_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+            {{#if error_msg}}
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-primary">Lịch sử thắng đấu giá & Mua hàng</h5>
+                </div>
+                <div class="card-body p-0">
+                    {{#if items.length}}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Sản phẩm</th>
+                                    <th>Giá mua</th>
+                                    <th>Người bán</th>
+                                    <th>Ngày mua</th>
+                                    <th class="text-end pe-4">Đánh giá</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each items}}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{image}}" alt="{{productName}}" class="rounded me-3"
+                                                style="width: 50px; height: 50px; object-fit: cover;">
+                                            <a href="/products/{{productId}}"
+                                                class="text-decoration-none fw-bold text-dark text-truncate"
+                                                style="max-width: 200px;">{{productName}}</a>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold text-success">{{price}}</td>
+                                    <td>{{sellerName}}</td>
+                                    <td class="small text-muted">{{date}}</td>
+                                    <td class="text-end pe-4">
+                                        {{#if isRated}}
+                                        <span class="badge bg-secondary"><i class="fas fa-check"></i> Đã đánh giá</span>
+                                        {{else}}
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#rateModal{{transactionId}}">
+                                            <i class="fas fa-star"></i> Đánh giá
+                                        </button>
+
+                                        <!-- Rating Modal -->
+                                        <div class="modal fade text-start" id="rateModal{{transactionId}}" tabindex="-1"
+                                            aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form action="/account/rate" method="POST">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Đánh giá người bán</h5>
+                                                            <button type="button" class="btn-close"
+                                                                data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <input type="hidden" name="transactionId"
+                                                                value="{{transactionId}}">
+                                                            <p>Bạn đang đánh giá giao dịch mua sản phẩm
+                                                                <strong>{{productName}}</strong> từ
+                                                                <strong>{{sellerName}}</strong>.</p>
+
+                                                            <div class="mb-3 text-center">
+                                                                <div class="btn-group" role="group">
+                                                                    <input type="radio" class="btn-check" name="score"
+                                                                        id="like{{transactionId}}" value="1" checked>
+                                                                    <label class="btn btn-outline-success"
+                                                                        for="like{{transactionId}}"><i
+                                                                            class="fas fa-thumbs-up"></i> Hài lòng
+                                                                        (+1)</label>
+
+                                                                    <input type="radio" class="btn-check" name="score"
+                                                                        id="dislike{{transactionId}}" value="-1">
+                                                                    <label class="btn btn-outline-danger"
+                                                                        for="dislike{{transactionId}}"><i
+                                                                            class="fas fa-thumbs-down"></i> Không hài
+                                                                        lòng (-1)</label>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Nhận xét</label>
+                                                                <textarea class="form-control" name="content" rows="3"
+                                                                    placeholder="Chia sẻ trải nghiệm của bạn..."
+                                                                    required></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary"
+                                                                data-bs-dismiss="modal">Đóng</button>
+                                                            <button type="submit" class="btn btn-primary">Gửi đánh
+                                                                giá</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Bạn chưa có giao dịch mua hàng nào.</p>
+                        <a href="/products" class="btn btn-primary">Mua sắm ngay</a>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

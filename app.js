@@ -40,7 +40,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'ban_quen_cau_hinh_env_roi',
     resave: false,
     saveUninitialized: false, // Không lưu session rỗng
-    cookie: { 
+    cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
         secure: false, // Set true nếu dùng HTTPS
         httpOnly: true
@@ -91,12 +91,16 @@ app.set('view engine', 'hbs');
 app.set('view cache', false); // Tắt cache cho development
 app.set('views', './src/views');
 
-// 6. ROUTES (PHẦN BẠN BỊ THIẾU)
-// Tải file route tổng hợp (index.route.js)
+// 6. ROUTES
 const mainRouter = require('./src/routes/index.route');
 app.use('/', mainRouter);
 
-// (Xóa đoạn app.get hardcode cũ đi vì nó đã nằm trong router rồi)
+// 6.5. Background Jobs (Kiểm tra đấu giá kết thúc)
+const { checkExpiredAuctions } = require('./src/services/auction.service');
+// Chạy mỗi phút một lần
+setInterval(checkExpiredAuctions, 60 * 1000);
+// Chạy ngay khi khởi động server
+checkExpiredAuctions();
 
 // 7. Xử lý lỗi 404 (Không tìm thấy trang) & 500 (Lỗi Server)
 app.use((req, res, next) => {
