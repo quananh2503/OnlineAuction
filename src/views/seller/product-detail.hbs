@@ -1,0 +1,189 @@
+{{#section 'css'}}
+<style>
+    .manage-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .manage-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        font-weight: bold;
+        background: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .manage-body {
+        padding: 20px;
+    }
+</style>
+{{/section}}
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/seller/products/active">Sản phẩm của tôi</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Quản lý: {{product.name}}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Left Column: Product Info & Actions -->
+        <div class="col-md-4">
+            <div class="manage-card">
+                <div class="manage-body text-center">
+                    <img src="{{product.avatar_url}}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                    <h5 class="fw-bold">{{product.name}}</h5>
+                    <div class="badge bg-{{#if (eq product.status 'ACTIVE')}}success{{else}}secondary{{/if}} mb-2">
+                        {{product.status}}
+                    </div>
+                    <div class="text-start mt-3">
+                        <p class="mb-1"><strong>Giá hiện tại:</strong> {{formatMoney product.current_price}}</p>
+                        <p class="mb-1"><strong>Lượt đấu:</strong> {{product.bid_count}}</p>
+                        <p class="mb-1"><strong>Kết thúc:</strong> {{formatRelativeTime product.ends_at}}</p>
+                    </div>
+                    <hr>
+                    <a href="/products/{{product.id}}" class="btn btn-outline-primary w-100 mb-2" target="_blank">
+                        <i class="fas fa-external-link-alt me-2"></i>Xem trang công khai
+                    </a>
+                </div>
+            </div>
+
+            <!-- Toggle Unrated -->
+            <div class="manage-card">
+                <div class="manage-header">Cấu hình</div>
+                <div class="manage-body">
+                    <form action="/seller/products/{{product.id}}/toggle-unrated" method="POST">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="allowUnrated"
+                                onchange="this.form.submit()" {{#if
+                                product.seller_allows_unrated_bidders}}checked{{/if}}>
+                            <label class="form-check-label" for="allowUnrated">Cho phép người chưa có đánh giá</label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Management Tools -->
+        <div class="col-md-8">
+
+            <!-- 1. Append Description -->
+            <div class="manage-card">
+                <div class="manage-header"><i class="fas fa-pen me-2"></i>Bổ sung mô tả</div>
+                <div class="manage-body">
+                    <form action="/seller/products/{{product.id}}/description" method="POST">
+                        <div class="mb-3">
+                            <textarea class="form-control" name="content" rows="3"
+                                placeholder="Nhập thông tin bổ sung..." required></textarea>
+                            <div class="form-text">Thông tin này sẽ được thêm vào dưới cùng của mô tả hiện tại kèm thời
+                                gian.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Cập nhật mô tả</button>
+                    </form>
+
+                    {{#if descriptions.length}}
+                    <div class="mt-3 border-top pt-3">
+                        <h6 class="fw-bold small text-muted">Lịch sử bổ sung:</h6>
+                        <ul class="list-unstyled small mb-0">
+                            {{#each descriptions}}
+                            <li class="mb-2">
+                                <span class="fw-bold text-primary">{{formatRelativeTime this.created_at}}:</span>
+                                {{this.content}}
+                            </li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <!-- 2. Block Bidders -->
+            <div class="manage-card">
+                <div class="manage-header text-danger"><i class="fas fa-ban me-2"></i>Chặn người đấu giá</div>
+                <div class="manage-body">
+                    <p class="small text-muted">Danh sách những người đang đấu giá sản phẩm này. Bạn có thể chặn họ nếu
+                        thấy nghi ngờ.</p>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Người đấu giá</th>
+                                    <th>Giá đặt</th>
+                                    <th>Thời gian</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each bids}}
+                                <tr>
+                                    <td>{{maskName this.bidder_name}} (Rating: {{this.rating}})</td>
+                                    <td>{{formatMoney this.price}}</td>
+                                    <td>{{formatRelativeTime this.created_at}}</td>
+                                    <td>
+                                        <form action="/seller/products/{{../product.id}}/block/{{this.bidder_id}}"
+                                            method="POST"
+                                            onsubmit="return confirm('Bạn có chắc chắn muốn chặn người này? Giá của họ sẽ bị hủy và người cao thứ 2 sẽ lên làm người thắng.');">
+                                            <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Chặn">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {{else}}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Chưa có lượt đấu giá nào.</td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Questions & Answers -->
+            <div class="manage-card">
+                <div class="manage-header"><i class="fas fa-comments me-2"></i>Hỏi đáp</div>
+                <div class="manage-body">
+                    {{#if questions.length}}
+                    <div class="list-group list-group-flush">
+                        {{#each questions}}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{this.asker_name}}</strong>
+                                    <span class="text-muted small ms-2">{{formatRelativeTime this.created_at}}</span>
+                                    <p class="mb-1 mt-1">{{this.content}}</p>
+                                </div>
+                            </div>
+
+                            {{#if this.answer_content}}
+                            <div class="bg-light p-2 rounded mt-2 ms-3 border-start border-3 border-primary">
+                                <small class="fw-bold text-primary">Trả lời:</small>
+                                <p class="mb-0 small">{{this.answer_content}}</p>
+                            </div>
+                            {{else}}
+                            <form action="/seller/products/{{../product.id}}/questions/{{this.id}}/answer" method="POST"
+                                class="mt-2">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" name="content"
+                                        placeholder="Nhập câu trả lời..." required>
+                                    <button class="btn btn-primary" type="submit">Gửi</button>
+                                </div>
+                            </form>
+                            {{/if}}
+                        </div>
+                        {{/each}}
+                    </div>
+                    {{else}}
+                    <p class="text-muted text-center my-3">Chưa có câu hỏi nào.</p>
+                    {{/if}}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

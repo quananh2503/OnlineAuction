@@ -4,8 +4,7 @@ const adminController = require('../controllers/admin.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
 // Middleware: Chỉ admin mới truy cập được
-// TODO: Uncomment khi đã có role admin trong DB
-// router.use(authMiddleware.isAdmin);
+router.use(authMiddleware.isAdmin);
 
 // Dashboard
 router.get('/', adminController.getDashboard);

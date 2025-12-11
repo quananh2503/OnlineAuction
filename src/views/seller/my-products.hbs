@@ -1,0 +1,150 @@
+{{#section 'css'}}
+<style>
+    .product-card-row {
+        background: #111418;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        padding: 20px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .product-thumb {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        background-color: #333;
+    }
+
+    .price-tag {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #10B981;
+        color: #fff;
+    }
+
+    .status-sold {
+        background: #8B5CF6;
+        color: #fff;
+    }
+
+    .status-ended {
+        background: #F59E0B;
+        color: #fff;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #F3BA2F;
+        color: #000;
+        font-weight: bold;
+    }
+
+    .nav-pills .nav-link {
+        color: #555;
+        background: rgba(0, 0, 0, 0.05);
+        margin-right: 10px;
+    }
+</style>
+{{/section}}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-warning mb-1">Sản Phẩm Của Tôi</h2>
+            <p class="text-muted">Quản lý các sản phẩm đấu giá của bạn</p>
+        </div>
+        <a href="/seller/products/create" class="btn btn-warning fw-bold">
+            <i class="fas fa-plus me-2"></i>Đăng Sản Phẩm Mới
+        </a>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-pills mb-4">
+        <li class="nav-item">
+            <a class="nav-link {{#if active}}active{{/if}}" href="/seller/products/active">Đang bán</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{#unless active}}active{{/unless}}" href="/seller/products/completed">Đã kết thúc</a>
+        </li>
+    </ul>
+
+    <!-- Product List -->
+    <div class="product-list">
+        {{#if products.length}}
+        {{#each products}}
+        <div class="product-card-row text-dark bg-white border shadow-sm">
+            <img src="{{this.avatar_url}}" alt="{{this.name}}" class="product-thumb">
+
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <h5 class="mb-0 fw-bold"><a href="/products/{{this.id}}"
+                            class="text-decoration-none text-dark">{{this.name}}</a></h5>
+                    {{#if (eq this.status 'ACTIVE')}}
+                    <span class="status-badge status-active">Đang bán</span>
+                    {{else}}
+                    {{#if (eq this.status 'SOLD')}}
+                    <span class="status-badge status-sold">Đã bán</span>
+                    {{else}}
+                    <span class="status-badge status-ended">Kết thúc</span>
+                    {{/if}}
+                    {{/if}}
+                    <span class="text-muted small ms-2"><i class="fas fa-gavel me-1"></i>{{this.bid_count}} lượt
+                        đấu</span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Giá hiện tại</small>
+                        <span class="price-tag text-success">{{formatMoney this.current_price}}</span>
+                    </div>
+                    <div class="col-md-4">
+                        {{#if (eq this.status 'ACTIVE')}}
+                        <small class="text-muted d-block">Kết thúc trong</small>
+                        <span class="fw-bold text-warning">{{formatRelativeTime this.ends_at}}</span>
+                        {{else}}
+                        <small class="text-muted d-block">Người thắng</small>
+                        {{#if this.winner_id}}
+                        <span class="fw-bold text-primary">User #{{this.winner_id}}</span>
+                        {{else}}
+                        <span class="text-muted">Không có</span>
+                        {{/if}}
+                        {{/if}}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group">
+                            <a href="/products/{{this.id}}" class="btn btn-outline-primary btn-sm" title="Xem chi tiết">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/seller/products/{{this.id}}/manage" class="btn btn-outline-secondary btn-sm"
+                                title="Quản lý">
+                                <i class="fas fa-cog"></i> Quản lý
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+        {{else}}
+        <div class="text-center py-5">
+            <div class="mb-3"><i class="fas fa-box-open fa-3x text-muted"></i></div>
+            <h4 class="text-muted">Chưa có sản phẩm nào</h4>
+            <a href="/seller/products/create" class="btn btn-link">Đăng sản phẩm ngay</a>
+        </div>
+        {{/if}}
+    </div>
+</div>

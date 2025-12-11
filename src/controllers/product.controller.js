@@ -106,7 +106,7 @@ async function loadProductDetail(productId, currentUserId) {
     const [productRes, imagesRes, descRes, bidsRes, questionsRes, relatedRes, watchRes] = await Promise.all([
         db.query(productSql, [productId]),
         safeQuery(`SELECT url, type FROM images WHERE product_id = $1 ORDER BY (type = 'AVATAR') DESC, id ASC`, [productId]),
-        safeQuery(`SELECT content FROM descriptions WHERE product_id = $1 LIMIT 1`, [productId]),
+        safeQuery(`SELECT content, created_at FROM descriptions WHERE product_id = $1 ORDER BY created_at ASC`, [productId]),
         safeQuery(`
             SELECT b.id, b.price, b.created_at, u.name
             FROM bids b
@@ -142,7 +142,17 @@ async function loadProductDetail(productId, currentUserId) {
     const sellerRating = ratingSummary(product.seller_rating_positive, product.seller_rating_negative);
     const bidderRating = ratingSummary(product.highest_bidder_positive, product.highest_bidder_negative);
     const gallery = imagesRes.rows.length ? imagesRes.rows.map((img) => img.url) : [product.avatar_url];
-    const description = descRes.rows[0]?.content || 'Chưa có mô tả chi tiết.';
+
+    let description = product.description || 'Chưa có mô tả chi tiết.';
+    if (descRes.rows.length > 0) {
+        descRes.rows.forEach(desc => {
+            description += `<div class="mt-3 border-top pt-2">
+                <p class="fw-bold mb-1 text-primary"><i class="fas fa-pen me-1"></i> Cập nhật ${formatAbsolute(desc.created_at)}:</p>
+                <div>${desc.content}</div>
+            </div>`;
+        });
+    }
+
     const showRelative = (new Date(product.ends_at).getTime() - Date.now()) <= (3 * 24 * 60 * 60 * 1000);
 
     const currentPrice = Number(product.current_price);
@@ -393,6 +403,7 @@ async function ensureBidEligibility(product, bidderRating, bidderId) {
             return { ok: false, message: 'Điểm đánh giá của bạn chưa đạt 80% nên không thể đặt giá.' };
         }
     } else if (!product.seller_allows_unrated_bidders) {
+        console.log(`[BID REJECTED] Seller ${product.seller_id} does not allow unrated bidder ${bidderId} to bid on product ${product.id}`);
         return { ok: false, message: 'Người bán không cho phép người dùng chưa có đánh giá tham gia.' };
     }
 

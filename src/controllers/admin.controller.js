@@ -8,13 +8,13 @@ module.exports = {
     async getDashboard(req, res, next) {
         try {
             const db = require('../configs/db');
-            
+
             // Thống kê từ database
             const userCountResult = await db.query('SELECT COUNT(*) FROM users');
             const productCountResult = await db.query("SELECT COUNT(*) FROM products WHERE status = 'ACTIVE'");
             const categoryCountResult = await db.query('SELECT COUNT(*) FROM categories');
             const pendingBidders = await bidderRequestModel.countPending();
-            
+
             const stats = {
                 totalUsers: parseInt(userCountResult.rows[0].count),
                 activeProducts: parseInt(productCountResult.rows[0].count),
@@ -46,7 +46,7 @@ module.exports = {
     async listCategories(req, res, next) {
         try {
             const categories = await categoryModel.getTree();
-            
+
             res.render('admin/categories', {
                 categories,
                 success_msg: req.query.success,
@@ -73,14 +73,14 @@ module.exports = {
             // Kiểm tra trùng tên
             const parentIdValue = parent_id && parent_id !== '' ? parseInt(parent_id) : null;
             const isDuplicate = await categoryModel.checkDuplicate(name.trim(), parentIdValue);
-            
+
             if (isDuplicate) {
                 return res.redirect('/admin/categories?error=' + encodeURIComponent('Tên danh mục đã tồn tại!'));
             }
 
             // Tạo category
             await categoryModel.create(name.trim(), parentIdValue);
-            
+
             res.redirect('/admin/categories?success=' + encodeURIComponent('Thêm danh mục thành công!'));
         } catch (error) {
             console.error('Error creating category:', error);
@@ -113,7 +113,7 @@ module.exports = {
 
             // Cập nhật
             await categoryModel.update(id, name.trim(), parentIdValue);
-            
+
             res.redirect('/admin/categories?success=' + encodeURIComponent('Cập nhật danh mục thành công!'));
         } catch (error) {
             console.error('Error updating category:', error);
@@ -125,9 +125,9 @@ module.exports = {
     async deleteCategory(req, res, next) {
         try {
             const { id } = req.params;
-            
+
             await categoryModel.delete(id);
-            
+
             res.redirect('/admin/categories?success=' + encodeURIComponent('Xóa danh mục thành công!'));
         } catch (error) {
             console.error('Error deleting category:', error);
@@ -146,7 +146,7 @@ module.exports = {
 
             // Lấy tất cả sản phẩm
             const allProducts = await productModel.listAllProducts();
-            
+
             // Format products
             const formatDateTimeLocal = (dateString) => {
                 if (!dateString) return '';
@@ -177,9 +177,9 @@ module.exports = {
             // Filter by search query
             if (q) {
                 const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
-                products = products.filter(p => 
-                    terms.every(t => 
-                        p.title.toLowerCase().includes(t) || 
+                products = products.filter(p =>
+                    terms.every(t =>
+                        p.title.toLowerCase().includes(t) ||
                         p.category.toLowerCase().includes(t) ||
                         p.seller.name.toLowerCase().includes(t)
                     )
@@ -229,27 +229,27 @@ module.exports = {
     async removeProduct(req, res, next) {
         try {
             const { id } = req.params;
-            
+
             await productModel.updateStatus(id, 'REMOVED');
-            
+
             res.redirect('/admin/products?success=' + encodeURIComponent('Gỡ bỏ sản phẩm thành công!'));
         } catch (error) {
             console.error('Error removing product:', error);
             res.redirect('/admin/products?error=' + encodeURIComponent(error.message));
         }
     },
-    async postBidderRequest(req,res,next){
+    async postBidderRequest(req, res, next) {
         try {
             const { user } = req.user;
-            
+
             await bidderRequestModel.create(user.id)
-            
-            
+
+
             res.redirect('/user/profile?success=' + encodeURIComponent('Gửi yêu cầu thành công!'));
         } catch (error) {
             console.error('Error removing product:', error);
             res.redirect('/user/profile?error=' + encodeURIComponent(error.message));
-        }        
+        }
     },
 
     // Quản lý yêu cầu đăng ký Bidder
@@ -259,11 +259,11 @@ module.exports = {
             const pendingRequests = await bidderRequestModel.getBidderRequests('PENDING');
             const approvedRequests = await bidderRequestModel.getBidderRequests('APPROVED');
             const rejectedRequests = await bidderRequestModel.getBidderRequests('REJECTED');
-            
+
             // Format pending requests
             const formattedPending = pendingRequests.map(r => {
                 const rating = r.rating >= 0 ? Math.round(r.rating) : 'Chưa có đánh giá';
-                return {    
+                return {
                     id: r.id,
                     name: r.name,
                     email: r.email,
@@ -271,7 +271,7 @@ module.exports = {
                     requestDate: new Date(r.created_at).toLocaleString('vi-VN')
                 };
             });
-            
+
             // Format approved requests
             const formattedApproved = approvedRequests.map(r => {
                 const total = (r.rating_positive_count || 0) + (r.rating_negative_count || 0);
@@ -285,7 +285,7 @@ module.exports = {
                     approvedBy: r.approved_by || 'Admin'
                 };
             });
-            
+
             // Format rejected requests
             const formattedRejected = rejectedRequests.map(r => {
                 const total = (r.rating_positive_count || 0) + (r.rating_negative_count || 0);
@@ -323,22 +323,34 @@ module.exports = {
         try {
             const { id } = req.params;
             const adminId = req.user.id;
-            
+
+            console.log(`[Admin] Approving request ${id} by admin ${adminId}`);
+
             // Approve request và lấy user_id
             const result = await bidderRequestModel.approve(id, adminId);
-            
+
             if (!result) {
+                console.warn(`[Admin] Request ${id} not found or already processed`);
                 req.flash('error_msg', 'Không tìm thấy yêu cầu hoặc đã được xử lý!');
                 return res.redirect('/admin/bidder-requests');
             }
-            
+
+            console.log(`[Admin] Request approved. Upgrading user ${result.user_id} to SELLER`);
+
             // Cập nhật role user thành SELLER
-            await userModel.updateRole(result.user_id, 'SELLER');
-            
+            const updatedUser = await userModel.updateRole(result.user_id, 'SELLER');
+
+            if (!updatedUser) {
+                console.error(`[Admin] Failed to update user ${result.user_id} role. User might not exist.`);
+                throw new Error('Không thể cập nhật quyền cho người dùng (User ID không tồn tại?)');
+            }
+
+            console.log(`[Admin] User ${result.user_id} upgraded successfully. New Role: ${updatedUser.role}`);
+
             req.flash('success_msg', 'Đã duyệt yêu cầu thành công!');
             res.redirect('/admin/bidder-requests');
         } catch (error) {
-            console.error('Error approving bidder request:', error);
+            console.error('[Admin] Error approving bidder request:', error);
             req.flash('error_msg', error.message);
             res.redirect('/admin/bidder-requests');
         }
@@ -350,15 +362,15 @@ module.exports = {
             const { id } = req.params;
             const { reason } = req.body;
             const adminId = req.user.id;
-            
+
             // Reject request
             const result = await bidderRequestModel.reject(id, adminId, reason || 'Không đủ điều kiện');
-            
+
             if (!result) {
                 req.flash('error_msg', 'Không tìm thấy yêu cầu hoặc đã được xử lý!');
                 return res.redirect('/admin/bidder-requests');
             }
-            
+
             req.flash('success_msg', 'Đã từ chối yêu cầu!');
             res.redirect('/admin/bidder-requests');
         } catch (error) {
@@ -384,18 +396,18 @@ module.exports = {
 
             // Lọc users (giả)
             let users = allUsers;
-            
+
             if (search) {
-                users = users.filter(u => 
-                    u.name.toLowerCase().includes(search.toLowerCase()) || 
+                users = users.filter(u =>
+                    u.name.toLowerCase().includes(search.toLowerCase()) ||
                     u.email.toLowerCase().includes(search.toLowerCase())
                 );
             }
-            
+
             if (role) {
                 users = users.filter(u => u.role === role);
             }
-            
+
             if (status) {
                 users = users.filter(u => u.status === status);
             }
@@ -420,10 +432,10 @@ module.exports = {
     async banUser(req, res, next) {
         try {
             const { id } = req.params;
-            
+
             // TODO: Cập nhật status user trong database
             // await userModel.updateStatus(id, 'BANNED');
-            
+
             res.redirect('/admin/users?success=' + encodeURIComponent('Đã khóa tài khoản người dùng!'));
         } catch (error) {
             console.error('Error banning user:', error);
@@ -435,10 +447,10 @@ module.exports = {
     async unbanUser(req, res, next) {
         try {
             const { id } = req.params;
-            
+
             // TODO: Cập nhật status user trong database
             // await userModel.updateStatus(id, 'ACTIVE');
-            
+
             res.redirect('/admin/users?success=' + encodeURIComponent('Đã mở khóa tài khoản người dùng!'));
         } catch (error) {
             console.error('Error unbanning user:', error);

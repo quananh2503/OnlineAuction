@@ -14,6 +14,8 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const flash = require('connect-flash');
 const db = require('./src/configs/db');
+const { formatMoney, maskName } = require('./src/utils/format');
+const { formatRelativeOrAbsolute } = require('./src/utils/time');
 
 require('express-async-errors');
 
@@ -73,6 +75,17 @@ app.engine('hbs', engine({
     layoutsDir: 'src/views/layouts',
     partialsDir: 'src/views/partials',
     helpers: {
+        formatMoney,
+        maskName,
+        formatRelativeTime: formatRelativeOrAbsolute,
+        section: function (name, options) {
+            if (!this._sections) this._sections = {};
+            this._sections[name] = options.fn(this);
+            return null;
+        },
+        json: function (context) {
+            return JSON.stringify(context);
+        },
         eq: (a, b) => a === b,
         ne: (a, b) => a !== b,
         ifEquals: function (a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); },
@@ -97,6 +110,7 @@ app.use('/', mainRouter);
 
 // 6.5. Background Jobs (Kiểm tra đấu giá kết thúc)
 const { checkExpiredAuctions } = require('./src/services/auction.service');
+
 // Chạy mỗi phút một lần
 setInterval(checkExpiredAuctions, 60 * 1000);
 // Chạy ngay khi khởi động server

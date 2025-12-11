@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Local stylesheet -->
     <link rel="stylesheet" href="/css/main.css">
+    {{{_sections.css}}}
 </head>
 
 <body>
@@ -93,6 +94,28 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuTop">
                             <li><a class="dropdown-item" href="/account/profile"><i class="fas fa-user me-2"></i>Tài
                                     khoản</a></li>
+
+                            {{#if (eq authUser.role 'ADMIN')}}
+                            <li><a class="dropdown-item" href="/admin"><i class="fas fa-user-shield me-2"></i>Trang quản
+                                    trị</a></li>
+                            {{/if}}
+
+                            {{#if (eq authUser.role 'SELLER')}}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <h6 class="dropdown-header">Kênh người bán</h6>
+                            </li>
+                            <li><a class="dropdown-item" href="/seller/products/active"><i
+                                        class="fas fa-box-open me-2"></i>Sản phẩm đang bán</a></li>
+                            <li><a class="dropdown-item" href="/seller/products/create"><i
+                                        class="fas fa-plus-circle me-2"></i>Đăng sản phẩm</a></li>
+                            {{/if}}
+
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li><a class="dropdown-item" href="/watchlist/my-watchlist"><i
                                         class="fas fa-heart me-2"></i>Watchlist</a></li>
                             <li><a class="dropdown-item" href="/account/bidding"><i class="fas fa-gavel me-2"></i>Đang
@@ -132,6 +155,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {{{_sections.js}}}
 </body>
 
 </html>

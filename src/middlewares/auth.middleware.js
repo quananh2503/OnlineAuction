@@ -39,7 +39,7 @@ module.exports = {
 
         // Kiểm tra role admin (giả sử có trường role trong user)
         // TODO: Cập nhật DB users table thêm column 'role'
-        if (req.user && req.user.role === 'admin') {
+        if (req.user && req.user.role === 'ADMIN') {
             return next();
         }
 

@@ -25,9 +25,9 @@ module.exports = {
             RETURNING *
         `;
         const result = await db.query(sql, [
-            user.email, 
-            user.password, 
-            user.name, 
+            user.email,
+            user.password,
+            user.name,
             user.address || null,
             user.google_id || null,
             user.otp
@@ -44,13 +44,13 @@ module.exports = {
         `;
         const result = await db.query(sql, [
             user.id,
-            user.name, 
+            user.name,
             user.address,
             user.birthday
         ]);
         return result.rows[0];
     },
-    async updatePassword(userId,hash) {
+    async updatePassword(userId, hash) {
         // user là object chứa { email, password, name, address, google_id }
         const sql = `
             UPDATE users
@@ -64,8 +64,8 @@ module.exports = {
         ]);
         return result.rows[0];
     },
-    async updateOTP(email, otp){
-         const sql = `
+    async updateOTP(email, otp) {
+        const sql = `
             UPDATE users
             set otp = $2
             where email = $1
@@ -75,10 +75,10 @@ module.exports = {
             email,
             otp
         ]);
-        return result.rows[0];       
+        return result.rows[0];
     },
-    async checkOTP(email, otp){
-         const sql = `
+    async checkOTP(email, otp) {
+        const sql = `
             select exists(
                 select 1
                 from users
@@ -89,9 +89,9 @@ module.exports = {
             email,
             otp
         ]);
-        return result.rows[0];       
+        return result.rows[0];
     },
-    async active(email){
+    async active(email) {
         const sql = `
             update users
             set status='ACTIVE'
@@ -101,17 +101,27 @@ module.exports = {
         const result = await db.query(sql, [
             email
         ]);
-        return result.rows[0]; 
+        return result.rows[0];
     },
 
     // Update role của user
     async updateRole(userId, role) {
-        const sql = `
-            UPDATE users
-            SET role = $2
-            WHERE id = $1
-            RETURNING *;
-        `;
+        let sql;
+        if (role === 'SELLER') {
+            sql = `
+                UPDATE users
+                SET role = $2, seller_expiration_date = NOW() + INTERVAL '7 days'
+                WHERE id = $1
+                RETURNING *;
+            `;
+        } else {
+            sql = `
+                UPDATE users
+                SET role = $2
+                WHERE id = $1
+                RETURNING *;
+            `;
+        }
         const result = await db.query(sql, [userId, role]);
         return result.rows[0];
     }

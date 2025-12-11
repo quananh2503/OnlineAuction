@@ -1,0 +1,293 @@
+{{#section 'css'}}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.5.2/css/fileinput.min.css">
+<style>
+    .seller-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid #eee;
+    }
+
+    .seller-header {
+        border-bottom: 1px solid #eee;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .text-muted-sm {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+</style>
+{{/section}}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="seller-card p-4">
+            <div class="seller-header">
+                <h2 class="fw-bold text-warning"><i class="fas fa-gavel me-2"></i>Đăng Sản Phẩm Mới</h2>
+                <p class="text-muted mb-0">Đăng bán sản phẩm của bạn để tiếp cận hàng ngàn người mua tiềm năng.</p>
+            </div>
+
+            <form action="/seller/products" method="POST" enctype="multipart/form-data" id="createProductForm">
+
+                <!-- Basic Info -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Thông tin cơ bản</h5>
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                            placeholder="Ví dụ: Đồng hồ cơ cổ điển...">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="parent_category" class="form-label">Danh mục lớn <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="parent_category">
+                                <option value="">-- Chọn danh mục lớn --</option>
+                                {{#each categories}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="category_id" class="form-label">Danh mục nhỏ <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="category_id" name="category_id" required disabled>
+                                <option value="">-- Vui lòng chọn danh mục lớn trước --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Images -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Hình ảnh sản phẩm</h5>
+                    <p class="text-muted-sm">Cần tối thiểu 3 ảnh. Ảnh đầu tiên sẽ là ảnh đại diện.</p>
+
+                    <div class="mb-3">
+                        <label for="images" class="form-label">Tải ảnh lên <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="images" name="images" multiple accept="image/*"
+                            required onchange="previewImages()">
+                        <div class="form-text">Giữ phím <strong>Ctrl</strong> để chọn nhiều ảnh cùng lúc. Hỗ trợ JPG,
+                            PNG, GIF. Tối đa 10 ảnh.</div>
+                        <div id="image-preview-container" class="d-flex flex-wrap gap-2 mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Pricing -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Thiết lập giá & Đấu giá</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="ends_at" class="form-label">Thời gian kết thúc <span
+                                    class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="ends_at" name="ends_at" required>
+                            <div class="form-text">Chọn thời điểm kết thúc đấu giá (phải ở tương lai).</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="starting_price" class="form-label">Giá khởi điểm <span
+                                    class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="starting_price" name="starting_price"
+                                    min="0" step="1000" required>
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="price_step" class="form-label">Bước giá <span
+                                    class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="price_step" name="price_step" min="0"
+                                    step="1000" required>
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                            <div class="form-text">Mức tăng tối thiểu cho mỗi lần đặt giá.</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="buy_now_price" class="form-label">Giá mua ngay (Tùy chọn)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="buy_now_price" name="buy_now_price"
+                                    min="0" step="1000">
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                            <div class="form-text">Người mua có thể mua ngay lập tức với giá này.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Mô tả chi tiết</h5>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Nội dung mô tả <span
+                                class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="6"></textarea>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Cấu hình nâng cao</h5>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="auto_extend" name="auto_extend" value="true"
+                            checked>
+                        <label class="form-check-label fw-bold" for="auto_extend">Tự động gia hạn</label>
+                        <div class="text-muted-sm">Nếu có lượt đấu giá mới trong 5 phút cuối, thời gian kết thúc sẽ được
+                            cộng thêm 10 phút.</div>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="allow_unrated" name="allow_unrated"
+                            value="true" checked>
+                        <label class="form-check-label fw-bold" for="allow_unrated">Cho phép người chưa có đánh
+                            giá</label>
+                        <div class="text-muted-sm">Nếu tắt, những người dùng chưa có lịch sử đánh giá sẽ không thể tham
+                            gia đấu giá sản phẩm này.</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex justify-content-end gap-3 mt-5">
+                    <a href="/seller/products/active" class="btn btn-outline-secondary px-4">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-warning px-5 fw-bold">Đăng Bán Ngay</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{{#section 'js'}}
+<script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
+<script>
+    let editor;
+    ClassicEditor
+        .create(document.querySelector('#description'))
+        .then(newEditor => {
+            editor = newEditor;
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+    // Category handling
+    const categoriesData = {{{ categoriesJson }}};
+    const parentSelect = document.getElementById('parent_category');
+    const childSelect = document.getElementById('category_id');
+
+    parentSelect.addEventListener('change', function () {
+        const parentId = parseInt(this.value);
+
+        // Reset child select
+        childSelect.innerHTML = '<option value="">-- Chọn danh mục nhỏ --</option>';
+        childSelect.disabled = true;
+
+        if (parentId) {
+            const parentCategory = categoriesData.find(c => c.id === parentId);
+            if (parentCategory) {
+                if (parentCategory.children && parentCategory.children.length > 0) {
+                    parentCategory.children.forEach(child => {
+                        const option = document.createElement('option');
+                        option.value = child.id;
+                        option.textContent = child.name;
+                        childSelect.appendChild(option);
+                    });
+                    childSelect.disabled = false;
+                } else {
+                    // Nếu không có danh mục con, cho phép chọn chính danh mục cha
+                    const option = document.createElement('option');
+                    option.value = parentCategory.id;
+                    option.textContent = parentCategory.name;
+                    childSelect.appendChild(option);
+                    childSelect.disabled = false;
+                }
+            }
+        } else {
+            childSelect.innerHTML = '<option value="">-- Vui lòng chọn danh mục lớn trước --</option>';
+        }
+    });
+
+    // Image Preview & Validation
+    function previewImages() {
+        const previewContainer = document.getElementById('image-preview-container');
+        const fileInput = document.getElementById('images');
+        const files = fileInput.files;
+
+        previewContainer.innerHTML = '';
+
+        if (files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const imgDiv = document.createElement('div');
+                        imgDiv.style.position = 'relative';
+                        imgDiv.style.width = '100px';
+                        imgDiv.style.height = '100px';
+
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'img-thumbnail';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+
+                        imgDiv.appendChild(img);
+                        previewContainer.appendChild(imgDiv);
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+    }
+
+    // Set min datetime for ends_at
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('ends_at').min = now.toISOString().slice(0, 16);
+
+    // Form Validation
+    document.getElementById('createProductForm').addEventListener('submit', function (e) {
+        // Sync CKEditor data to textarea
+        if (editor) {
+            const descriptionData = editor.getData();
+            document.getElementById('description').value = descriptionData;
+
+            if (!descriptionData.trim()) {
+                e.preventDefault();
+                alert('Vui lòng nhập mô tả sản phẩm!');
+                return;
+            }
+        }
+
+        const fileInput = document.getElementById('images');
+        if (fileInput.files.length < 3) {
+            e.preventDefault();
+            alert('Vui lòng chọn ít nhất 3 ảnh cho sản phẩm!');
+            return;
+        }
+
+        const endsAt = new Date(document.getElementById('ends_at').value);
+        if (endsAt <= new Date()) {
+            e.preventDefault();
+            alert('Thời gian kết thúc phải lớn hơn thời gian hiện tại!');
+            return;
+        }
+    });
+</script>
+{{/section}}

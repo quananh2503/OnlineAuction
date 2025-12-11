@@ -2,7 +2,7 @@ const db = require('../configs/db');
 
 module.exports = {
     // Lấy tất cả pending requests
-    async getBidderRequests(status ) {
+    async getBidderRequests(status) {
         const sql = `
             SELECT br.id, br.user_id, br.created_at,
                    u.name,u.email ,COALESCE(u.bidder_average_rating, -1) as rating
@@ -14,7 +14,7 @@ module.exports = {
         return result.rows;
     },
 
-  
+
     // Kiểm tra user đã có pending request chưa
     async hasPendingRequest(userId) {
         const sql = `
@@ -57,14 +57,14 @@ module.exports = {
 
 
     // Approve request
-    async approve(requestId) {
+    async approve(requestId, adminId) {
         const sql = `
             UPDATE bidder_requests 
-            SET status = 'APPROVED',approved_at = NOW()
+            SET status = 'APPROVED', approved_at = NOW(), approved_by = $2
             WHERE id = $1 AND status = 'PENDING'
             RETURNING user_id
         `;
-        const result = await db.query(sql, [requestId]);
+        const result = await db.query(sql, [requestId, adminId]);
         return result.rows[0];
     },
 
