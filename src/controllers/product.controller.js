@@ -65,8 +65,10 @@ function mapListProduct(product, watchlisted) {
     const currentPrice = Number(product.current_price);
     const startingPrice = Number(product.starting_price);
     const priceStep = Number(product.price_step);
-    const basePrice = (!isNaN(currentPrice) && currentPrice > 0) ? currentPrice : startingPrice;
-    const suggestedBidValue = basePrice + priceStep;
+    const bidCount = Number(product.bid_count || 0);
+
+    // Logic giá gợi ý: Nếu chưa có ai đặt (bidCount=0) -> Giá khởi điểm. Ngược lại -> Giá hiện tại + Bước giá
+    const suggestedBidValue = (bidCount === 0) ? startingPrice : (currentPrice + priceStep);
 
     return {
         id: product.id,
@@ -146,8 +148,10 @@ async function loadProductDetail(productId, currentUserId) {
     const currentPrice = Number(product.current_price);
     const startingPrice = Number(product.starting_price);
     const priceStep = Number(product.price_step);
-    const basePrice = (!isNaN(currentPrice) && currentPrice > 0) ? currentPrice : startingPrice;
-    const suggestedBidValue = basePrice + priceStep;
+    const bidCount = Number(product.bid_count || 0);
+
+    // Logic giá gợi ý: Nếu chưa có ai đặt (bidCount=0) -> Giá khởi điểm. Ngược lại -> Giá hiện tại + Bước giá
+    const suggestedBidValue = (bidCount === 0) ? startingPrice : (currentPrice + priceStep);
 
     return {
         product: {
@@ -373,6 +377,9 @@ async function ensureBidEligibility(product, bidderRating, bidderId) {
     if (product.seller_id === bidderId) {
         return { ok: false, message: 'Bạn không thể đấu giá sản phẩm của chính mình.' };
     }
+    if (product.winner_id === bidderId) {
+        return { ok: false, message: 'Bạn đang là người đấu giá cao nhất không thể tiếp tục đấu giá vui lòng đợi khi có người đấu giá cao hơn' };
+    }
     if (product.status !== 'ACTIVE' || new Date(product.ends_at).getTime() <= Date.now()) {
         return { ok: false, message: 'Phiên đấu giá đã kết thúc.' };
     }
@@ -417,8 +424,10 @@ async function placeBid(req, res, next) {
         const currentPrice = Number(product.current_price);
         const startingPrice = Number(product.starting_price);
         const priceStep = Number(product.price_step);
-        const basePrice = (!isNaN(currentPrice) && currentPrice > 0) ? currentPrice : startingPrice;
-        const suggested = basePrice + priceStep;
+        const bidCount = Number(product.bid_count || 0);
+
+        // Logic giá gợi ý: Nếu chưa có ai đặt (bidCount=0) -> Giá khởi điểm. Ngược lại -> Giá hiện tại + Bước giá
+        const suggested = (bidCount === 0) ? startingPrice : (currentPrice + priceStep);
 
         if (bidAmount < suggested) {
             await client.query('ROLLBACK');

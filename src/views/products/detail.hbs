@@ -109,11 +109,15 @@
 
         <div class="d-grid gap-2">
             {{#if product.canBid}}
-            <form method="POST" action="/products/{{product.id}}/bid" onsubmit="return confirm('Xác nhận đặt giá?');">
+            <form id="bidForm" method="POST" action="/products/{{product.id}}/bid">
+                {{!-- Hidden input to store buyNowPrice for JS --}}
+                <input type="hidden" id="buyNowPriceData"
+                    value="{{#if product.buyNowPriceValue}}{{product.buyNowPriceValue}}{{else}}Infinity{{/if}}">
                 <div class="input-group input-group-lg">
                     <span class="input-group-text bg-white text-muted">$</span>
                     <input type="number" step="{{product.priceStepRaw}}" min="{{product.suggestedBidValue}}"
-                        value="{{product.suggestedBidValue}}" name="amount" class="form-control fw-bold" required>
+                        value="{{product.suggestedBidValue}}" name="amount" id="bidAmount" class="form-control fw-bold"
+                        required>
                     <button class="btn btn-primary px-4" type="submit">Đặt giá</button>
                 </div>
                 <div class="form-text mt-1">
@@ -123,14 +127,99 @@
             {{/if}}
 
             {{#if product.canBuyNow}}
-            <form method="POST" action="/products/{{product.id}}/buy-now"
-                onsubmit="return confirm('Xác nhận mua ngay?');">
-                <button class="btn btn-outline-success btn-lg w-100" type="submit">
+            <form id="buyNowForm" method="POST" action="/products/{{product.id}}/buy-now">
+                <button class="btn btn-outline-success btn-lg w-100" type="button" id="btnBuyNow">
                     Mua ngay với giá {{product.buyNowPriceFormatted}}
                 </button>
             </form>
             {{/if}}
         </div>
+
+        {{!-- SweetAlert2 & Custom Script --}}
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Check for error in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const errorMsg = urlParams.get('error');
+                if (errorMsg) {
+                    Swal.fire({
+                        title: 'Thông báo',
+                        text: errorMsg,
+                        icon: 'warning',
+                        confirmButtonColor: '#0d6efd'
+                    });
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
+                const bidForm = document.getElementById('bidForm');
+                const buyNowForm = document.getElementById('buyNowForm');
+                const btnBuyNow = document.getElementById('btnBuyNow');
+
+                if (bidForm) {
+                    bidForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const amountInput = document.getElementById('bidAmount');
+                        const amount = parseFloat(amountInput.value);
+                        // Read from hidden input to avoid Handlebars syntax errors in script
+                        const buyNowPrice = parseFloat(document.getElementById('buyNowPriceData').value);
+                        const formattedBuyNow = "{{product.buyNowPriceFormatted}}";
+
+                        if (amount >= buyNowPrice) {
+                            Swal.fire({
+                                title: 'Xác nhận mua ngay?',
+                                text: `Giá bạn đặt (${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}) cao hơn hoặc bằng giá mua ngay. Bạn có muốn mua ngay sản phẩm này không?`,
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Đồng ý mua ngay',
+                                cancelButtonText: 'Hủy',
+                                confirmButtonColor: '#198754',
+                                cancelButtonColor: '#6c757d'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    if (buyNowForm) buyNowForm.submit();
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Xác nhận đặt giá?',
+                                text: `Bạn muốn đặt giá: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}`,
+                                icon: 'info',
+                                showCancelButton: true,
+                                confirmButtonText: 'Đặt giá',
+                                cancelButtonText: 'Hủy',
+                                confirmButtonColor: '#0d6efd',
+                                cancelButtonColor: '#6c757d'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    bidForm.submit();
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (btnBuyNow && buyNowForm) {
+                    btnBuyNow.addEventListener('click', function () {
+                        Swal.fire({
+                            title: 'Xác nhận mua ngay?',
+                            text: "Bạn có chắc chắn muốn mua ngay sản phẩm này?",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Mua ngay',
+                            cancelButtonText: 'Hủy',
+                            confirmButtonColor: '#198754',
+                            cancelButtonColor: '#6c757d'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                buyNowForm.submit();
+                            }
+                        });
+                    });
+                }
+            });
+        </script>
     </div>
 </div>
 
