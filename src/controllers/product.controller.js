@@ -143,11 +143,23 @@ async function loadProductDetail(productId, currentUserId) {
     const bidderRating = ratingSummary(product.highest_bidder_positive, product.highest_bidder_negative);
     const gallery = imagesRes.rows.length ? imagesRes.rows.map((img) => img.url) : [product.avatar_url];
 
-    let description = product.description || 'Chưa có mô tả chi tiết.';
-    if (descRes.rows.length > 0) {
-        descRes.rows.forEach(desc => {
+    let description = product.description;
+    let updates = descRes.rows;
+
+    // Backward compatibility: If product.description is missing, use the first entry from descriptions table
+    if (!description && updates.length > 0) {
+        description = updates[0].content;
+        updates = updates.slice(1);
+    }
+
+    if (!description) {
+        description = 'Chưa có mô tả chi tiết.';
+    }
+
+    if (updates.length > 0) {
+        updates.forEach(desc => {
             description += `<div class="mt-3 border-top pt-2">
-                <p class="fw-bold mb-1 text-primary"><i class="fas fa-pen me-1"></i> Cập nhật ${formatAbsolute(desc.created_at)}:</p>
+                <p class="fw-bold mb-1 text-primary"><i class="fas fa-pen me-1"></i> Cập nhật ${formatAbsolute(desc.created_at)}</p>
                 <div>${desc.content}</div>
             </div>`;
         });
@@ -346,7 +358,8 @@ async function postCreateProduct(req, res, next) {
             ends_at,
             starting_price,
             price_step,
-            buy_now_price
+            buy_now_price,
+            payment_time_limit
         } = req.body;
 
         const categories = await categoriesModel.getSubCategories();
@@ -372,6 +385,7 @@ async function postCreateProduct(req, res, next) {
             starting_price: parseFloat(starting_price),
             price_step: parseFloat(price_step),
             buy_now_price: buy_now_price ? parseFloat(buy_now_price) : null,
+            payment_time_limit: parseInt(payment_time_limit) || 24,
             avatar_url: avatarUrl,
             image_urls: descriptionUrls
         };
@@ -384,6 +398,12 @@ async function postCreateProduct(req, res, next) {
 }
 
 async function ensureBidEligibility(product, bidderRating, bidderId) {
+    // Check if blocked
+    const blockedRes = await db.query('SELECT 1 FROM blocked_bidders WHERE product_id = $1 AND bidder_id = $2', [product.id, bidderId]);
+    if (blockedRes.rows.length > 0) {
+        return { ok: false, message: 'Bạn đã bị người bán chặn khỏi phiên đấu giá này.' };
+    }
+
     if (product.seller_id === bidderId) {
         return { ok: false, message: 'Bạn không thể đấu giá sản phẩm của chính mình.' };
     }
@@ -461,6 +481,17 @@ async function placeBid(req, res, next) {
             }
         }
 
+        // Get previous highest bidder for notification
+        const prevBidRes = await client.query(`
+            SELECT u.email 
+            FROM bids b
+            JOIN users u ON b.bidder_id = u.id
+            WHERE b.product_id = $1 AND b.status = 'ACTIVE'
+            ORDER BY b.price DESC
+            LIMIT 1
+        `, [productId]);
+        const prevBidderEmail = prevBidRes.rows.length > 0 ? prevBidRes.rows[0].email : null;
+
         await client.query(
             `INSERT INTO bids (product_id, bidder_id, price, status) VALUES ($1, $2, $3, 'ACTIVE')`,
             [productId, req.user.id, bidAmount]
@@ -471,6 +502,20 @@ async function placeBid(req, res, next) {
         );
 
         await client.query('COMMIT');
+
+        // Send Email Notification
+        const { sendBidSuccessEmail } = require('../services/email.service');
+        sendBidSuccessEmail({
+            sellerEmail: product.seller_email,
+            bidderEmail: req.user.email,
+            prevBidderEmail: (prevBidderEmail && prevBidderEmail !== req.user.email) ? prevBidderEmail : null,
+            productName: product.name,
+            price: formatMoney(bidAmount),
+            time: formatAbsolute(new Date()),
+            productUrl: `${BASE_URL}/products/${productId}`,
+            bidderName: req.user.name
+        }).catch(err => console.error('Email error:', err));
+
         // TODO: Emit realtime event via SSE/socket here.
         return respondWithFallback(req, res, `/products/${productId}`, {
             success: true,
@@ -512,21 +557,26 @@ async function buyNow(req, res, next) {
             req.user.id,
             productId
         ]);
-        await client.query(
-            'INSERT INTO transactions (product_id, buyer_id, seller_id, price) VALUES ($1, $2, $3, $4)',
-            [productId, req.user.id, product.seller_id, product.buy_now_price]
+
+        // Insert transaction and get ID
+        const transRes = await client.query(
+            'INSERT INTO transactions (product_id, buyer_id, seller_id, price, status) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+            [productId, req.user.id, product.seller_id, product.buy_now_price, 'PENDING']
         );
+        const transactionId = transRes.rows[0].id;
 
         await client.query('COMMIT');
+        const { sendBuyNowNotification } = require('../services/email.service');
         await sendBuyNowNotification({
             sellerEmail: product.seller_email,
             buyerEmail: req.user.email,
             productName: product.name,
-            priceFormatted: formatMoney(product.buy_now_price),
+            price: formatMoney(product.buy_now_price),
             productUrl: `${BASE_URL}/products/${productId}`
         });
 
-        return respondWithFallback(req, res, `/products/${productId}`, { success: true, redirect: `/products/${productId}` });
+        // Redirect to transaction detail for payment
+        return respondWithFallback(req, res, `/transactions/${transactionId}`, { success: true, redirect: `/transactions/${transactionId}` });
     } catch (error) {
         await client.query('ROLLBACK');
         next(error);
@@ -611,10 +661,13 @@ async function postQuestion(req, res, next) {
         ]);
 
         const detail = await loadProductDetail(productId, req.user.id);
-        await sendQuestionNotification({
-            to: detail?.product?.sellerEmail,
+        const { sendNewQuestionEmail } = require('../services/email.service');
+        await sendNewQuestionEmail({
+            sellerEmail: detail?.product?.sellerEmail,
+            sellerName: detail?.product?.seller?.name,
+            askerName: req.user.name,
             productName: detail?.product?.name,
-            questionContent: content,
+            question: content,
             productUrl: `${BASE_URL}/products/${productId}`
         });
 
@@ -654,11 +707,17 @@ async function answerQuestion(req, res, next) {
             [answer, req.user.id, questionId]
         );
 
-        await sendAnswerNotification({
-            to: question.asker_email,
+        // Fetch all bidders to notify
+        const biddersRes = await db.query('SELECT DISTINCT u.email FROM bids b JOIN users u ON b.bidder_id = u.id WHERE b.product_id = $1', [productId]);
+        const bidderEmails = biddersRes.rows.map(r => r.email);
+        const toList = [...new Set([question.asker_email, ...bidderEmails])];
+
+        const { sendAnswerEmail } = require('../services/email.service');
+        await sendAnswerEmail({
+            toList,
             productName: question.product_name,
-            questionContent: question.content,
-            answerContent: answer,
+            question: question.content,
+            answer: answer,
             productUrl: `${BASE_URL}/products/${productId}`
         });
 

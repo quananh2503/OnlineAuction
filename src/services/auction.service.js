@@ -1,5 +1,5 @@
 const db = require('../configs/db');
-const { sendAuctionWonNotification } = require('./email.service');
+const { sendAuctionWonNotification, sendAuctionEndedNoWinnerNotification } = require('./email.service');
 const { formatMoney } = require('../utils/format');
 
 async function checkExpiredAuctions() {
@@ -35,7 +35,7 @@ async function checkExpiredAuctions() {
 
                     // Create transaction
                     await client.query(
-                        'INSERT INTO transactions (product_id, buyer_id, seller_id, price) VALUES ($1, $2, $3, $4)',
+                        "INSERT INTO transactions (product_id, buyer_id, seller_id, price, status) VALUES ($1, $2, $3, $4, 'PENDING')",
                         [product.id, product.winner_id, product.seller_id, product.current_price]
                     );
                 } else {
@@ -52,6 +52,13 @@ async function checkExpiredAuctions() {
                         winnerEmail: product.winner_email,
                         productName: product.name,
                         priceFormatted: formatMoney(product.current_price),
+                        productUrl
+                    }).catch(err => console.error('[AuctionService] Email error:', err));
+                } else {
+                    const productUrl = `${process.env.APP_BASE_URL || 'http://localhost:3000'}/products/${product.id}`;
+                    sendAuctionEndedNoWinnerNotification({
+                        sellerEmail: product.seller_email,
+                        productName: product.name,
                         productUrl
                     }).catch(err => console.error('[AuctionService] Email error:', err));
                 }

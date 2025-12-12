@@ -2,11 +2,18 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="mb-1"><i class="fas fa-trophy me-2"></i>Sản phẩm đã thắng</h2>
-            <p class="text-muted mb-0">Các sản phẩm bạn đã thắng đấu giá</p>
+            <p class="text-muted mb-0">Các sản phẩm bạn đã thắng đấu giá (Đang xử lý)</p>
         </div>
-        <a href="/transactions/sold" class="btn btn-outline-primary">
-            <i class="fas fa-store me-1"></i>Sản phẩm đã bán
-        </a>
+        <div>
+            <a href="/transactions/bought" class="btn btn-outline-success me-2">
+                <i class="fas fa-history me-1"></i>Lịch sử mua hàng
+            </a>
+            {{#if (eq authUser.role 'SELLER')}}
+            <a href="/transactions/sold" class="btn btn-outline-primary">
+                <i class="fas fa-store me-1"></i>Sản phẩm đã bán
+            </a>
+            {{/if}}
+        </div>
     </div>
 
     {{#if success_msg}}
@@ -32,8 +39,8 @@
                     <div class="row align-items-center">
                         {{! Product Image }}
                         <div class="col-md-2">
-                            <img src="{{productImage}}" alt="{{productName}}" 
-                                 class="img-fluid rounded" style="max-height: 120px; object-fit: cover;">
+                            <img src="{{productImage}}" alt="{{productName}}" class="img-fluid rounded"
+                                style="max-height: 120px; object-fit: cover;">
                         </div>
 
                         {{! Product Info }}
@@ -57,25 +64,25 @@
                         {{! Status & Actions }}
                         <div class="col-md-4 text-end">
                             {{#if (eq status 'PENDING')}}
-                                <span class="badge bg-warning text-dark fs-6 mb-3">
-                                    <i class="fas fa-clock me-1"></i>Chờ thanh toán
-                                </span>
+                            <span class="badge bg-warning text-dark fs-6 mb-3">
+                                <i class="fas fa-clock me-1"></i>Chờ thanh toán
+                            </span>
                             {{else if (eq status 'PAID')}}
-                                <span class="badge bg-info fs-6 mb-3">
-                                    <i class="fas fa-credit-card me-1"></i>Đã thanh toán
-                                </span>
+                            <span class="badge bg-info fs-6 mb-3">
+                                <i class="fas fa-credit-card me-1"></i>Đã thanh toán
+                            </span>
                             {{else if (eq status 'SHIPPED')}}
-                                <span class="badge bg-primary fs-6 mb-3">
-                                    <i class="fas fa-shipping-fast me-1"></i>Đang giao hàng
-                                </span>
+                            <span class="badge bg-primary fs-6 mb-3">
+                                <i class="fas fa-shipping-fast me-1"></i>Đang giao hàng
+                            </span>
                             {{else if (eq status 'COMPLETED')}}
-                                <span class="badge bg-success fs-6 mb-3">
-                                    <i class="fas fa-check-circle me-1"></i>Hoàn thành
-                                </span>
+                            <span class="badge bg-success fs-6 mb-3">
+                                <i class="fas fa-check-circle me-1"></i>Hoàn thành
+                            </span>
                             {{else if (eq status 'CANCELLED')}}
-                                <span class="badge bg-danger fs-6 mb-3">
-                                    <i class="fas fa-times-circle me-1"></i>Đã hủy
-                                </span>
+                            <span class="badge bg-danger fs-6 mb-3">
+                                <i class="fas fa-times-circle me-1"></i>Đã hủy
+                            </span>
                             {{/if}}
 
                             <div class="d-grid gap-2">
@@ -106,12 +113,12 @@
 </div>
 
 <style>
-.hover-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
-.hover-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
-}
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+    }
 </style>

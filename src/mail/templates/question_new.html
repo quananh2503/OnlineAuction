@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .header { background-color: #ffc107; color: #000; padding: 10px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { padding: 20px; }
+        .footer { text-align: center; font-size: 12px; color: #777; margin-top: 20px; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #ffc107; color: #000; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Câu Hỏi Mới Về Sản Phẩm</h2>
+        </div>
+        <div class="content">
+            <p>Xin chào <strong>{{sellerName}}</strong>,</p>
+            <p>Bạn nhận được một câu hỏi mới từ <strong>{{askerName}}</strong> về sản phẩm <strong>{{productName}}</strong>.</p>
+            <p><strong>Nội dung câu hỏi:</strong></p>
+            <blockquote style="background: #f9f9f9; border-left: 5px solid #ccc; margin: 1.5em 10px; padding: 0.5em 10px;">
+                {{question}}
+            </blockquote>
+            <p>Vui lòng trả lời sớm để tăng khả năng bán được hàng.</p>
+            <p style="text-align: center;">
+                <a href="{{productUrl}}" class="button">Trả Lời Ngay</a>
+            </p>
+        </div>
+        <div class="footer">
+            <p>Online Auction System</p>
+        </div>
+    </div>
+</body>
+</html>

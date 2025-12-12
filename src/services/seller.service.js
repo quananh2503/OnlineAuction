@@ -1,4 +1,6 @@
 const db = require('../configs/db');
+const { sendBidRejectedNotification, sendAnswerNotification } = require('./email.service');
+const BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
 
 module.exports = {
     // 1. Đăng sản phẩm
@@ -14,9 +16,10 @@ module.exports = {
                     starting_price, price_step, buy_now_price, 
                     current_price, avatar_url, 
                     starts_at, ends_at, 
-                    status, seller_allows_unrated_bidders
+                    status, seller_allows_unrated_bidders,
+                    description
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, 'ACTIVE', $10)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, 'ACTIVE', $10, $11)
                 RETURNING id
             `;
             // Mặc định auto_extend logic có thể xử lý ở cronjob, ở đây ta lưu cơ bản
@@ -32,7 +35,8 @@ module.exports = {
                 data.starting_price, // current_price = starting_price ban đầu
                 data.avatar_url,
                 data.ends_at, // Use passed ends_at
-                data.seller_allows_unrated_bidders
+                data.seller_allows_unrated_bidders,
+                data.description
             ]);
             const productId = productRes.rows[0].id;
 
@@ -42,14 +46,6 @@ module.exports = {
                 for (const url of data.images) {
                     await client.query(imageSql, [productId, url]);
                 }
-            }
-
-            // Insert description
-            if (data.description) {
-                await client.query(
-                    `INSERT INTO descriptions (product_id, content, created_at) VALUES ($1, $2, NOW())`,
-                    [productId, data.description]
-                );
             }
 
             await client.query('COMMIT');
@@ -74,6 +70,14 @@ module.exports = {
         const client = await db.getClient();
         try {
             await client.query('BEGIN');
+
+            // Fetch info for email
+            const infoRes = await client.query(`
+                SELECT p.name as product_name, u.email as bidder_email
+                FROM products p, users u
+                WHERE p.id = $1 AND u.id = $2
+            `, [productId, bidderId]);
+            const info = infoRes.rows[0];
 
             // 1. Thêm vào bảng blocked_bidders
             await client.query(
@@ -131,6 +135,15 @@ module.exports = {
             }
 
             await client.query('COMMIT');
+
+            if (info) {
+                sendBidRejectedNotification({
+                    bidderEmail: info.bidder_email,
+                    productName: info.product_name,
+                    reason: 'Người bán đã chặn bạn khỏi phiên đấu giá này.'
+                }).catch(console.error);
+            }
+
             return true;
         } catch (error) {
             await client.query('ROLLBACK');
@@ -151,8 +164,35 @@ module.exports = {
         `;
         const result = await db.query(sql, [content, sellerId, questionId, productId]);
 
-        // TODO: Gửi email (giả lập)
-        // Lấy danh sách email người hỏi và người đấu giá để gửi thông báo
+        // Get question content and product name
+        const qRes = await db.query(`
+            SELECT q.content, p.name as product_name 
+            FROM questions q
+            JOIN products p ON q.product_id = p.id
+            WHERE q.id = $1
+        `, [questionId]);
+        const questionData = qRes.rows[0];
+
+        // Get emails of all bidders and questioners
+        const emailRes = await db.query(`
+            SELECT DISTINCT u.email
+            FROM users u
+            LEFT JOIN bids b ON u.id = b.bidder_id AND b.product_id = $1
+            LEFT JOIN questions q ON u.id = q.user_id AND q.product_id = $1
+            WHERE b.id IS NOT NULL OR q.id IS NOT NULL
+        `, [productId]);
+
+        const emails = emailRes.rows.map(r => r.email);
+
+        if (emails.length > 0 && questionData) {
+            sendAnswerNotification({
+                toList: emails,
+                productName: questionData.product_name,
+                questionContent: questionData.content,
+                answerContent: content,
+                productUrl: `${BASE_URL}/products/${productId}`
+            }).catch(console.error);
+        }
 
         return result.rows[0];
     },

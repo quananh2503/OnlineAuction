@@ -1,0 +1,58 @@
+{{#section 'css'}}
+<style>
+    .transaction-card {
+        transition: transform 0.2s;
+    }
+
+    .transaction-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{{/section}}
+
+<div class="container py-4">
+    <h2 class="mb-4 fw-bold text-success"><i class="fas fa-check-circle me-2"></i>Lịch sử mua hàng</h2>
+
+    {{#if transactions.length}}
+    <div class="row g-4">
+        {{#each transactions}}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 transaction-card border-success">
+                <div
+                    class="card-header bg-transparent border-success d-flex justify-content-between align-items-center">
+                    <span class="badge bg-success">Hoàn tất</span>
+                    <small class="text-muted">{{this.dateFormatted}}</small>
+                </div>
+                <div class="row g-0">
+                    <div class="col-4">
+                        <img src="{{this.product_image}}" class="img-fluid rounded-start h-100 object-fit-cover"
+                            alt="{{this.product_name}}">
+                    </div>
+                    <div class="col-8">
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate" title="{{this.product_name}}">{{this.product_name}}
+                            </h5>
+                            <p class="card-text mb-1">
+                                <small class="text-muted">Người bán:</small> <strong>{{this.seller_name}}</strong>
+                            </p>
+                            <p class="card-text text-danger fw-bold">{{this.priceFormatted}}</p>
+                            <a href="/transactions/{{this.id}}"
+                                class="btn btn-outline-success btn-sm w-100 stretched-link">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="fas fa-shopping-cart fa-5x text-muted" style="opacity: 0.3;"></i>
+        </div>
+        <p class="text-muted">Bạn chưa mua thành công sản phẩm nào.</p>
+        <a href="/" class="btn btn-primary">Dạo chợ ngay</a>
+    </div>
+    {{/if}}
+</div>

@@ -88,6 +88,8 @@ app.engine('hbs', engine({
         },
         eq: (a, b) => a === b,
         ne: (a, b) => a !== b,
+        and: (a, b) => a && b,
+        or: (a, b) => a || b,
         ifEquals: function (a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); },
         add: (a, b) => a + b,
         subtract: (a, b) => a - b,
@@ -110,11 +112,15 @@ app.use('/', mainRouter);
 
 // 6.5. Background Jobs (Kiểm tra đấu giá kết thúc)
 const { checkExpiredAuctions } = require('./src/services/auction.service');
+const cronService = require('./src/services/cron.service');
 
 // Chạy mỗi phút một lần
 setInterval(checkExpiredAuctions, 60 * 1000);
 // Chạy ngay khi khởi động server
 checkExpiredAuctions();
+
+// Start payment check cron
+cronService.start();
 
 // 7. Xử lý lỗi 404 (Không tìm thấy trang) & 500 (Lỗi Server)
 app.use((req, res, next) => {

@@ -180,9 +180,9 @@ module.exports = {
                     seller_id, category_id, name,
                     starts_at, ends_at, 
                     starting_price, price_step, buy_now_price,
-                    avatar_url, current_price, status
+                    avatar_url, current_price, status, payment_time_limit
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ACTIVE')
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ACTIVE', $11)
                 RETURNING *
             `;
 
@@ -196,7 +196,8 @@ module.exports = {
                 productData.price_step,
                 productData.buy_now_price || null,
                 productData.avatar_url,
-                productData.starting_price // current_price = starting_price
+                productData.starting_price, // current_price = starting_price
+                productData.payment_time_limit
             ]);
 
             const product = productResult.rows[0];

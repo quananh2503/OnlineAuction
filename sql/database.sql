@@ -26,6 +26,15 @@ CREATE TABLE public.bids (
   CONSTRAINT bids_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
   CONSTRAINT bids_bidder_id_fkey FOREIGN KEY (bidder_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.blocked_bidders (
+  id integer NOT NULL DEFAULT nextval('blocked_bidders_id_seq'::regclass),
+  product_id integer NOT NULL,
+  bidder_id integer NOT NULL,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT blocked_bidders_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_blocked_bidders_product FOREIGN KEY (product_id) REFERENCES public.products(id),
+  CONSTRAINT fk_blocked_bidders_user FOREIGN KEY (bidder_id) REFERENCES public.users(id)
+);
 CREATE TABLE public.categories (
   id integer NOT NULL DEFAULT nextval('categories_id_seq'::regclass),
   name character varying NOT NULL,
@@ -33,17 +42,15 @@ CREATE TABLE public.categories (
   CONSTRAINT categories_pkey PRIMARY KEY (id),
   CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.categories(id)
 );
-CREATE TABLE public.comments (
-  id integer NOT NULL DEFAULT nextval('comments_id_seq'::regclass),
-  product_id integer NOT NULL,
-  user_id integer NOT NULL,
-  parent_id integer,
+CREATE TABLE public.chats (
+  id integer NOT NULL DEFAULT nextval('chats_id_seq'::regclass),
+  transaction_id integer,
+  sender_id integer,
   content text NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT comments_pkey PRIMARY KEY (id),
-  CONSTRAINT comments_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
-  CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT comments_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.comments(id)
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT chats_pkey PRIMARY KEY (id),
+  CONSTRAINT chats_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id),
+  CONSTRAINT chats_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.descriptions (
   id integer NOT NULL DEFAULT nextval('descriptions_id_seq'::regclass),
@@ -89,6 +96,7 @@ CREATE TABLE public.products (
   bid_count integer NOT NULL DEFAULT 0,
   status text NOT NULL DEFAULT 'ACTIVE'::text,
   seller_allows_unrated_bidders boolean NOT NULL DEFAULT true,
+  auto_extend boolean NOT NULL DEFAULT false,
   CONSTRAINT products_pkey PRIMARY KEY (id),
   CONSTRAINT products_seller_id_fkey FOREIGN KEY (seller_id) REFERENCES public.users(id),
   CONSTRAINT products_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.users(id),
@@ -136,6 +144,13 @@ CREATE TABLE public.transactions (
   status text NOT NULL DEFAULT 'AWAITING_PAYMENT'::transaction_status,
   created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone,
+  delivery_address text,
+  payment_proof text,
+  shipping_proof text,
+  buyer_rating integer,
+  buyer_comment text,
+  seller_rating integer,
+  seller_comment text,
   CONSTRAINT transactions_pkey PRIMARY KEY (id),
   CONSTRAINT transactions_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
   CONSTRAINT transactions_buyer_id_fkey FOREIGN KEY (buyer_id) REFERENCES public.users(id),
@@ -160,8 +175,7 @@ CREATE TABLE public.users (
   google_id character varying,
   status character varying NOT NULL DEFAULT 'INACTIVE'::character varying,
   otp character varying,
-  rating_positive_count integer NOT NULL DEFAULT 0,
-  rating_negative_count integer NOT NULL DEFAULT 0,
+  seller_expiration_date timestamp with time zone,
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.watchlists (

@@ -1,12 +1,14 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-1"><i class="fas fa-store me-2"></i>Sản phẩm đã bán</h2>
-            <p class="text-muted mb-0">Các sản phẩm bạn đã bán thành công</p>
+            <h2 class="mb-1"><i class="fas fa-store me-2"></i>Quản lý bán hàng</h2>
+            <p class="text-muted mb-0">Theo dõi các đơn hàng và lịch sử bán hàng của bạn</p>
         </div>
-        <a href="/transactions/won" class="btn btn-outline-success">
-            <i class="fas fa-trophy me-1"></i>Sản phẩm đã thắng
-        </a>
+        <div>
+            <a href="/transactions/won" class="btn btn-outline-primary">
+                <i class="fas fa-shopping-bag me-1"></i>Sản phẩm đã thắng
+            </a>
+        </div>
     </div>
 
     {{#if success_msg}}
@@ -16,102 +18,129 @@
     </div>
     {{/if}}
 
-    {{#if error_msg}}
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {{/if}}
+    <ul class="nav nav-tabs mb-4" id="soldTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button"
+                role="tab">
+                Đơn hàng cần xử lý
+                {{#if activeTransactions.length}}<span
+                    class="badge bg-danger ms-1">{{activeTransactions.length}}</span>{{/if}}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button"
+                role="tab">
+                Lịch sử bán hàng
+            </button>
+        </li>
+    </ul>
 
-    {{#if transactions.length}}
-    <div class="row g-4">
-        {{#each transactions}}
-        <div class="col-12">
-            <div class="card shadow-sm hover-card">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        {{! Product Image }}
-                        <div class="col-md-2">
-                            <img src="{{productImage}}" alt="{{productName}}" 
-                                 class="img-fluid rounded" style="max-height: 120px; object-fit: cover;">
-                        </div>
-
-                        {{! Product Info }}
-                        <div class="col-md-6">
-                            <h5 class="mb-2">
-                                <a href="/products/{{productId}}" class="text-decoration-none text-dark">
-                                    {{productName}}
-                                </a>
-                            </h5>
-                            <p class="mb-1 text-muted">
-                                <i class="fas fa-user me-1"></i>Người mua: <strong>{{buyerName}}</strong>
-                            </p>
-                            <p class="mb-1 text-muted">
-                                <i class="fas fa-clock me-1"></i>Bán lúc: {{createdAt}}
-                            </p>
-                            <h4 class="mb-0 text-success">
-                                <i class="fas fa-tag me-1"></i>{{price}}
-                            </h4>
-                        </div>
-
-                        {{! Status & Actions }}
-                        <div class="col-md-4 text-end">
-                            {{#if (eq status 'PENDING')}}
-                                <span class="badge bg-warning text-dark fs-6 mb-3">
-                                    <i class="fas fa-clock me-1"></i>Chờ thanh toán
-                                </span>
-                            {{else if (eq status 'PAID')}}
-                                <span class="badge bg-info fs-6 mb-3">
-                                    <i class="fas fa-credit-card me-1"></i>Đã thanh toán
-                                </span>
-                            {{else if (eq status 'SHIPPED')}}
-                                <span class="badge bg-primary fs-6 mb-3">
-                                    <i class="fas fa-shipping-fast me-1"></i>Đang giao hàng
-                                </span>
-                            {{else if (eq status 'COMPLETED')}}
-                                <span class="badge bg-success fs-6 mb-3">
-                                    <i class="fas fa-check-circle me-1"></i>Hoàn thành
-                                </span>
-                            {{else if (eq status 'CANCELLED')}}
-                                <span class="badge bg-danger fs-6 mb-3">
-                                    <i class="fas fa-times-circle me-1"></i>Đã hủy
-                                </span>
-                            {{/if}}
-
-                            <div class="d-grid gap-2">
-                                <a href="/transactions/{{id}}" class="btn btn-primary">
-                                    <i class="fas fa-arrow-right me-1"></i>Quản lý đơn hàng
-                                </a>
-                                <a href="/products/{{productId}}" class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-eye me-1"></i>Xem sản phẩm
-                                </a>
+    <div class="tab-content" id="soldTabsContent">
+        <!-- Active Orders Tab -->
+        <div class="tab-pane fade show active" id="active" role="tabpanel">
+            {{#if activeTransactions.length}}
+            <div class="row g-4">
+                {{#each activeTransactions}}
+                <div class="col-12">
+                    <div
+                        class="card shadow-sm border-start border-4 {{#if (eq status 'PENDING')}}border-warning{{else}}border-info{{/if}}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <img src="{{productImage}}" alt="{{productName}}" class="img-fluid rounded"
+                                        style="max-height: 100px; object-fit: cover;">
+                                </div>
+                                <div class="col-md-5">
+                                    <h5 class="mb-1"><a href="/transactions/{{id}}"
+                                            class="text-decoration-none text-dark">{{productName}}</a></h5>
+                                    <div class="text-muted small mb-2">Người mua: <strong>{{buyerName}}</strong></div>
+                                    <div class="fw-bold text-danger">{{price}}</div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    {{#if (eq status 'PENDING')}}
+                                    <span class="badge bg-warning text-dark mb-2">Chờ thanh toán</span>
+                                    <div class="small text-muted">Người mua chưa thanh toán</div>
+                                    {{/if}}
+                                    {{#if (eq status 'PAID')}}
+                                    <span class="badge bg-info mb-2">Đã thanh toán</span>
+                                    <div class="small text-danger fw-bold">Cần gửi hàng ngay!</div>
+                                    {{/if}}
+                                    {{#if (eq status 'SHIPPED')}}
+                                    <span class="badge bg-primary mb-2">Đang giao hàng</span>
+                                    <div class="small text-muted">Chờ người mua nhận hàng</div>
+                                    {{/if}}
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <a href="/transactions/{{id}}" class="btn btn-primary btn-sm">
+                                        Chi tiết <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                {{/each}}
             </div>
+            {{else}}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-clipboard-check fa-3x mb-3"></i>
+                <p>Hiện không có đơn hàng nào cần xử lý.</p>
+            </div>
+            {{/if}}
         </div>
-        {{/each}}
+
+        <!-- History Tab -->
+        <div class="tab-pane fade" id="history" role="tabpanel">
+            {{#if historyTransactions.length}}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Người mua</th>
+                            <th>Giá bán</th>
+                            <th>Ngày tạo</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each historyTransactions}}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{productImage}}" class="rounded me-2" width="40" height="40"
+                                        style="object-fit: cover;">
+                                    <span class="d-inline-block text-truncate"
+                                        style="max-width: 200px;">{{productName}}</span>
+                                </div>
+                            </td>
+                            <td>{{buyerName}}</td>
+                            <td class="fw-bold">{{price}}</td>
+                            <td class="small text-muted">{{createdAt}}</td>
+                            <td>
+                                {{#if isCompleted}}
+                                <span class="badge bg-success">Thành công</span>
+                                {{else}}
+                                <span class="badge bg-secondary">Đã hủy</span>
+                                {{/if}}
+                            </td>
+                            <td>
+                                <a href="/transactions/{{id}}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-history fa-3x mb-3"></i>
+                <p>Chưa có lịch sử bán hàng.</p>
+            </div>
+            {{/if}}
+        </div>
     </div>
-    {{else}}
-    <div class="text-center py-5">
-        <i class="fas fa-box-open fa-5x text-muted mb-4"></i>
-        <h4 class="text-muted">Chưa có sản phẩm nào</h4>
-        <p class="text-muted">Bạn chưa bán sản phẩm nào.</p>
-        <a href="/products/create" class="btn btn-primary mt-3">
-            <i class="fas fa-plus me-1"></i>Tạo sản phẩm mới
-        </a>
-    </div>
-    {{/if}}
 </div>
-
-<style>
-.hover-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hover-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
-}
-</style>

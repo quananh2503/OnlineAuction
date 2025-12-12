@@ -1,0 +1,20 @@
+-- Add columns to transactions table
+ALTER TABLE transactions
+ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, PAID, SHIPPED, COMPLETED, CANCELLED
+ADD COLUMN IF NOT EXISTS delivery_address TEXT,
+ADD COLUMN IF NOT EXISTS payment_proof TEXT,
+ADD COLUMN IF NOT EXISTS shipping_proof TEXT,
+ADD COLUMN IF NOT EXISTS buyer_rating INT,
+ADD COLUMN IF NOT EXISTS buyer_comment TEXT,
+ADD COLUMN IF NOT EXISTS seller_rating INT,
+ADD COLUMN IF NOT EXISTS seller_comment TEXT,
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- Create chats table
+CREATE TABLE IF NOT EXISTS chats (
+    id SERIAL PRIMARY KEY,
+    transaction_id INTEGER REFERENCES transactions(id),
+    sender_id INTEGER REFERENCES users(id),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

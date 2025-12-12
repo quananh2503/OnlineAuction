@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .header { background-color: #198754; color: white; padding: 10px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { padding: 20px; }
+        .footer { text-align: center; font-size: 12px; color: #777; margin-top: 20px; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #198754; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Chúc Mừng! Bạn Đã Thắng Đấu Giá</h2>
+        </div>
+        <div class="content">
+            <p>Xin chào <strong>{{winnerName}}</strong>,</p>
+            <p>Chúc mừng bạn đã chiến thắng phiên đấu giá sản phẩm <strong>{{productName}}</strong>.</p>
+            <p><strong>Chi tiết chiến thắng:</strong></p>
+            <ul>
+                <li>Sản phẩm: {{productName}}</li>
+                <li>Giá thắng cuộc: <strong>{{price}}</strong></li>
+            </ul>
+            <p>Vui lòng truy cập trang giao dịch để hoàn tất thanh toán và liên hệ với người bán.</p>
+            <p style="text-align: center;">
+                <a href="{{transactionUrl}}" class="button">Đi Đến Trang Giao Dịch</a>
+            </p>
+        </div>
+        <div class="footer">
+            <p>Online Auction System</p>
+        </div>
+    </div>
+</body>
+</html>

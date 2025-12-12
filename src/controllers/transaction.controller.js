@@ -3,13 +3,16 @@ const { formatMoney } = require('../utils/format');
 const { formatAbsolute } = require('../utils/time');
 
 module.exports = {
-    // Hiển thị danh sách transactions đã thắng (buyer view)
+    // Hiển thị danh sách transactions đã thắng (buyer view) - Chỉ hiện chưa hoàn thành
     async listWonTransactions(req, res, next) {
         try {
             const userId = req.user.id;
             const transactions = await transactionModel.getWonByUser(userId);
 
-            const formattedTransactions = transactions.map(t => ({
+            // Filter out completed transactions
+            const activeTransactions = transactions.filter(t => t.status !== 'COMPLETED');
+
+            const formattedTransactions = activeTransactions.map(t => ({
                 id: t.id,
                 productId: t.product_id,
                 productName: t.product_name,
@@ -39,7 +42,10 @@ module.exports = {
             const userId = req.user.id;
             const transactions = await transactionModel.getSoldByUser(userId);
 
-            const formattedTransactions = transactions.map(t => ({
+            const activeTransactions = transactions.filter(t => t.status !== 'COMPLETED' && t.status !== 'CANCELLED');
+            const historyTransactions = transactions.filter(t => t.status === 'COMPLETED' || t.status === 'CANCELLED');
+
+            const formatTx = (t) => ({
                 id: t.id,
                 productId: t.product_id,
                 productName: t.product_name,
@@ -49,11 +55,14 @@ module.exports = {
                 buyerName: t.buyer_name,
                 buyerId: t.buyer_id,
                 createdAt: formatAbsolute(t.created_at),
-                status: t.status || 'PENDING'
-            }));
+                status: t.status || 'PENDING',
+                isCompleted: t.status === 'COMPLETED',
+                isCancelled: t.status === 'CANCELLED'
+            });
 
             res.render('transactions/sold', {
-                transactions: formattedTransactions,
+                activeTransactions: activeTransactions.map(formatTx),
+                historyTransactions: historyTransactions.map(formatTx),
                 isAuth: req.isAuthenticated(),
                 authUser: req.user
             });
@@ -98,8 +107,19 @@ module.exports = {
                     sellerName: transaction.seller_name,
                     sellerId: transaction.seller_id,
                     createdAt: formatAbsolute(transaction.created_at),
-                    status: transaction.status || 'PENDING'
+                    status: transaction.status || 'PENDING',
+                    deliveryAddress: transaction.delivery_address,
+                    paymentProof: transaction.payment_proof,
+                    shippingProof: transaction.shipping_proof,
+                    buyerRating: transaction.buyer_rating,
+                    buyerComment: transaction.buyer_comment,
+                    sellerRating: transaction.seller_rating,
+                    sellerComment: transaction.seller_comment,
+                    isCompleted: transaction.status === 'COMPLETED',
+                    isCancelled: transaction.status === 'CANCELLED',
+                    payment_time_limit: transaction.payment_time_limit
                 },
+                chats: await transactionModel.getChats(transactionId),
                 isBuyer,
                 isSeller,
                 isAuth: req.isAuthenticated(),
@@ -107,6 +127,118 @@ module.exports = {
             });
         } catch (error) {
             console.error('Error getting transaction detail:', error);
+            next(error);
+        }
+    },
+
+    // Buyer: Đã mua (Lịch sử thành công)
+    async listBoughtTransactions(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const transactions = await transactionModel.getBoughtByUser(userId);
+
+            res.render('transactions/bought', {
+                transactions: transactions.map(t => ({
+                    ...t,
+                    priceFormatted: formatMoney(t.price),
+                    dateFormatted: formatAbsolute(t.updated_at)
+                })),
+                isAuth: true,
+                authUser: req.user
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Step 1: Buyer submit payment
+    async submitPayment(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { address } = req.body;
+            // Giả sử upload middleware đã xử lý file và trả về req.file
+            // Trong thực tế cần upload lên Supabase/Cloudinary
+            // Ở đây giả lập url nếu có file, hoặc lấy text input nếu user nhập link
+            const proofUrl = req.file ? req.file.path : (req.body.proofUrl || '');
+
+            await transactionModel.updatePayment(id, address, proofUrl);
+            req.flash('success_msg', 'Đã gửi thông tin thanh toán.');
+            res.redirect(`/transactions/${id}`);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Step 2: Seller confirm shipping
+    async confirmShipping(req, res, next) {
+        try {
+            const { id } = req.params;
+            const proofUrl = req.body.proofUrl || ''; // Giả lập
+
+            await transactionModel.updateShipping(id, proofUrl);
+            req.flash('success_msg', 'Đã xác nhận gửi hàng.');
+            res.redirect(`/transactions/${id}`);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Step 3: Buyer confirm receipt
+    async confirmReceipt(req, res, next) {
+        try {
+            const { id } = req.params;
+            await transactionModel.updateStatus(id, 'COMPLETED');
+            req.flash('success_msg', 'Giao dịch hoàn tất!');
+            res.redirect(`/transactions/${id}`);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Step 4: Rating
+    async submitRating(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { rating, comment } = req.body;
+            const role = req.user.id === (await transactionModel.getById(id)).buyer_id ? 'buyer' : 'seller';
+
+            await transactionModel.updateRating(id, req.user.id, role, parseInt(rating), comment);
+            req.flash('success_msg', 'Đã gửi đánh giá.');
+            res.redirect(`/transactions/${id}`);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Cancel
+    async cancelTransaction(req, res, next) {
+        try {
+            const { id } = req.params;
+            // Chỉ seller được cancel (theo yêu cầu)
+            const transaction = await transactionModel.getById(id);
+            if (transaction.seller_id !== req.user.id) {
+                return res.status(403).send('Unauthorized');
+            }
+
+            await transactionModel.updateStatus(id, 'CANCELLED');
+            // Auto rate -1 buyer
+            await transactionModel.updateRating(id, req.user.id, 'seller', -1, 'Người bán đã hủy giao dịch.');
+
+            req.flash('success_msg', 'Đã hủy giao dịch.');
+            res.redirect(`/transactions/${id}`);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Chat
+    async sendChat(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { content } = req.body;
+            await transactionModel.addChat(id, req.user.id, content);
+            res.redirect(`/transactions/${id}`);
+        } catch (error) {
             next(error);
         }
     }

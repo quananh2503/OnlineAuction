@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .header { background-color: #dc3545; color: white; padding: 10px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { padding: 20px; }
+        .footer { text-align: center; font-size: 12px; color: #777; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Thông Báo Từ Chối Ra Giá</h2>
+        </div>
+        <div class="content">
+            <p>Xin chào <strong>{{bidderName}}</strong>,</p>
+            <p>Rất tiếc, lượt ra giá của bạn cho sản phẩm <strong>{{productName}}</strong> đã bị từ chối.</p>
+            <p><strong>Chi tiết:</strong></p>
+            <ul>
+                <li>Sản phẩm: {{productName}}</li>
+                <li>Lý do: {{reason}}</li>
+                <li>Người chặn: {{sellerName}}</li>
+            </ul>
+            <p>Nếu bạn cho rằng đây là sự nhầm lẫn, vui lòng liên hệ với người bán.</p>
+        </div>
+        <div class="footer">
+            <p>Online Auction System</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,6 +1,104 @@
-<div class="container py-4">
-    {{! Header }}
-    <div class="mb-4">
+{{#section 'css'}}
+<style>
+    .transaction-container {
+        background-color: #f8f9fa;
+        min-height: 80vh;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #e9ecef;
+        z-index: 0;
+    }
+
+    .step-item {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        background: #f8f9fa;
+        padding: 0 10px;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 5px;
+        font-weight: bold;
+    }
+
+    .step-item.active .step-circle {
+        background: #0d6efd;
+        color: #fff;
+    }
+
+    .step-item.completed .step-circle {
+        background: #198754;
+        color: #fff;
+    }
+
+    .chat-box {
+        height: 500px;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+    .message {
+        margin-bottom: 1rem;
+        max-width: 80%;
+    }
+
+    .message.sent {
+        margin-left: auto;
+        background: #e3f2fd;
+        padding: 0.5rem 1rem;
+        border-radius: 1rem 1rem 0 1rem;
+    }
+
+    .message.received {
+        margin-right: auto;
+        background: #f1f3f4;
+        padding: 0.5rem 1rem;
+        border-radius: 1rem 1rem 1rem 0;
+    }
+
+    .product-summary {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{{/section}}
+
+<div class="container py-4 transaction-container">
+    <div class="mb-3">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
@@ -8,13 +106,11 @@
                         {{#if isBuyer}}Sản phẩm đã thắng{{else}}Sản phẩm đã bán{{/if}}
                     </a>
                 </li>
-                <li class="breadcrumb-item active">Hoàn tất đơn hàng</li>
+                <li class="breadcrumb-item active">Chi tiết giao dịch</li>
             </ol>
         </nav>
-        <h2><i class="fas fa-clipboard-check me-2"></i>Hoàn tất đơn hàng</h2>
     </div>
 
-    {{! Flash Messages }}
     {{#if success_msg}}
     <div class="alert alert-success alert-dismissible fade show">
         <i class="fas fa-check-circle me-2"></i>{{success_msg}}
@@ -22,382 +118,304 @@
     </div>
     {{/if}}
 
-    {{#if error_msg}}
-    <div class="alert alert-danger alert-dismissible fade show">
-        <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {{/if}}
-
     <div class="row">
-        {{! Left: Product Info & Progress }}
+        <!-- Left Column: Transaction Process -->
         <div class="col-lg-8">
-            {{! Product Card }}
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
+            <!-- Product Summary -->
+            <div class="product-summary mb-4">
+                <div class="d-flex align-items-center">
+                    <img src="{{transaction.productImage}}" alt="{{transaction.productName}}" class="rounded"
+                        style="width: 80px; height: 80px; object-fit: cover;">
+                    <div class="ms-3 flex-grow-1">
+                        <h5 class="mb-1">{{transaction.productName}}</h5>
+                        <div class="text-muted small">
+                            Giá chốt: <span class="text-danger fw-bold fs-5">{{transaction.price}}</span>
+                        </div>
+                        <div class="text-muted small">
+                            {{#if isBuyer}}
+                            Người bán: <strong>{{transaction.sellerName}}</strong>
+                            {{else}}
+                            Người mua: <strong>{{transaction.buyerName}}</strong>
+                            {{/if}}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        {{#if transaction.isCancelled}}
+                        <span class="badge bg-danger fs-6">Đã hủy</span>
+                        {{else}}
+                        {{#if transaction.isCompleted}}
+                        <span class="badge bg-success fs-6">Hoàn tất</span>
+                        {{else}}
+                        <span class="badge bg-warning text-dark fs-6">Đang xử lý</span>
+                        {{/if}}
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
+            {{#unless transaction.isCancelled}}
+            <!-- Progress Steps -->
+            <div class="step-indicator">
+                <div
+                    class="step-item {{#if (or (eq transaction.status 'PENDING') (eq transaction.status 'PAID') (eq transaction.status 'SHIPPED') (eq transaction.status 'COMPLETED'))}}active{{/if}} {{#if (or (eq transaction.status 'PAID') (eq transaction.status 'SHIPPED') (eq transaction.status 'COMPLETED'))}}completed{{/if}}">
+                    <div class="step-circle">1</div>
+                    <div class="small">Thanh toán</div>
+                </div>
+                <div
+                    class="step-item {{#if (or (eq transaction.status 'PAID') (eq transaction.status 'SHIPPED') (eq transaction.status 'COMPLETED'))}}active{{/if}} {{#if (or (eq transaction.status 'SHIPPED') (eq transaction.status 'COMPLETED'))}}completed{{/if}}">
+                    <div class="step-circle">2</div>
+                    <div class="small">Giao hàng</div>
+                </div>
+                <div
+                    class="step-item {{#if (or (eq transaction.status 'SHIPPED') (eq transaction.status 'COMPLETED'))}}active{{/if}} {{#if (eq transaction.status 'COMPLETED')}}completed{{/if}}">
+                    <div class="step-circle">3</div>
+                    <div class="small">Nhận hàng</div>
+                </div>
+                <div class="step-item {{#if (eq transaction.status 'COMPLETED')}}active{{/if}}">
+                    <div class="step-circle">4</div>
+                    <div class="small">Đánh giá</div>
+                </div>
+            </div>
+
+            <!-- Step Content -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <!-- STEP 1: PAYMENT -->
+                    {{#if (eq transaction.status 'PENDING')}}
+                    <h4 class="card-title mb-4">Bước 1: Thanh toán & Địa chỉ</h4>
+
+                    {{#if transaction.payment_time_limit}}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-clock me-2"></i>
+                        Thời hạn thanh toán: <strong>{{transaction.payment_time_limit}} giờ</strong> kể từ khi kết thúc
+                        đấu giá.
+                        <br>
+                        Nếu không thanh toán đúng hạn, giao dịch sẽ bị hủy và bạn sẽ bị đánh giá -1.
+                    </div>
+                    {{/if}}
+
+                    {{#if isBuyer}}
+                    <form action="/transactions/{{transaction.id}}/payment" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ nhận hàng</label>
+                            <textarea class="form-control" name="address" rows="3" required
+                                placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Link ảnh chuyển khoản / Minh chứng thanh toán</label>
+                            <input type="text" class="form-control" name="proofUrl" placeholder="https://..." required>
+                            <div class="form-text">Vui lòng upload ảnh lên dịch vụ lưu trữ và dán link vào đây.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Xác nhận đã thanh toán</button>
+                    </form>
+                    {{else}}
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <p class="lead">Đang chờ người mua thanh toán và cung cấp địa chỉ...</p>
+                    </div>
+                    {{/if}}
+                    {{/if}}
+
+                    <!-- STEP 2: SHIPPING -->
+                    {{#if (eq transaction.status 'PAID')}}
+                    <h4 class="card-title mb-4">Bước 2: Xác nhận & Giao hàng</h4>
+                    <div class="alert alert-info">
+                        <strong>Thông tin từ người mua:</strong><br>
+                        Địa chỉ: {{transaction.deliveryAddress}}<br>
+                        Minh chứng thanh toán: <a href="{{transaction.paymentProof}}" target="_blank">Xem ảnh</a>
+                    </div>
+
+                    {{#if isSeller}}
+                    <form action="/transactions/{{transaction.id}}/shipping" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Link ảnh vận đơn / Minh chứng gửi hàng</label>
+                            <input type="text" class="form-control" name="proofUrl" placeholder="https://..." required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Xác nhận đã gửi hàng</button>
+                    </form>
+                    {{else}}
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <p class="lead">Người bán đang chuẩn bị hàng và gửi đi...</p>
+                    </div>
+                    {{/if}}
+                    {{/if}}
+
+                    <!-- STEP 3: RECEIPT -->
+                    {{#if (eq transaction.status 'SHIPPED')}}
+                    <h4 class="card-title mb-4">Bước 3: Xác nhận nhận hàng</h4>
+                    <div class="alert alert-success">
+                        <strong>Người bán đã gửi hàng!</strong><br>
+                        Minh chứng vận chuyển: <a href="{{transaction.shippingProof}}" target="_blank">Xem ảnh</a>
+                    </div>
+
+                    {{#if isBuyer}}
+                    <p>Vui lòng kiểm tra hàng hóa trước khi xác nhận.</p>
+                    <form action="/transactions/{{transaction.id}}/confirm" method="POST">
+                        <button type="submit" class="btn btn-success w-100 btn-lg">Đã nhận được hàng</button>
+                    </form>
+                    {{else}}
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <p class="lead">Đang chờ người mua xác nhận đã nhận hàng...</p>
+                    </div>
+                    {{/if}}
+                    {{/if}}
+
+                    <!-- STEP 4: RATING -->
+                    {{#if (eq transaction.status 'COMPLETED')}}
+                    <h4 class="card-title mb-4">Bước 4: Đánh giá giao dịch</h4>
+                    <div class="alert alert-success text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i><br>
+                        Giao dịch đã hoàn tất thành công!
+                    </div>
+
                     <div class="row">
-                        <div class="col-md-3">
-                            <img src="{{transaction.productImage}}" alt="{{transaction.productName}}" 
-                                 class="img-fluid rounded">
+                        <!-- My Rating -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-light fw-bold">Đánh giá của bạn</div>
+                                <div class="card-body">
+                                    {{#if (or (and isBuyer transaction.buyerRating) (and isSeller
+                                    transaction.sellerRating))}}
+                                    <div class="text-center mb-3">
+                                        {{#if isBuyer}}
+                                        {{#if (eq transaction.buyerRating 1)}}<span class="text-success fs-1"><i
+                                                class="fas fa-thumbs-up"></i> +1</span>{{else}}<span
+                                            class="text-danger fs-1"><i class="fas fa-thumbs-down"></i> -1</span>{{/if}}
+                                        <p class="mt-2">{{transaction.buyerComment}}</p>
+                                        {{else}}
+                                        {{#if (eq transaction.sellerRating 1)}}<span class="text-success fs-1"><i
+                                                class="fas fa-thumbs-up"></i> +1</span>{{else}}<span
+                                            class="text-danger fs-1"><i class="fas fa-thumbs-down"></i> -1</span>{{/if}}
+                                        <p class="mt-2">{{transaction.sellerComment}}</p>
+                                        {{/if}}
+                                    </div>
+                                    <hr>
+                                    <p class="small text-muted text-center">Bạn có thể cập nhật lại đánh giá:</p>
+                                    {{/if}}
+
+                                    <form action="/transactions/{{transaction.id}}/rate" method="POST">
+                                        <div class="mb-3 text-center">
+                                            <div class="btn-group" role="group">
+                                                <input type="radio" class="btn-check" name="rating" id="rateUp"
+                                                    value="1" checked>
+                                                <label class="btn btn-outline-success" for="rateUp"><i
+                                                        class="fas fa-thumbs-up"></i> Hài lòng (+1)</label>
+
+                                                <input type="radio" class="btn-check" name="rating" id="rateDown"
+                                                    value="-1">
+                                                <label class="btn btn-outline-danger" for="rateDown"><i
+                                                        class="fas fa-thumbs-down"></i> Không hài lòng (-1)</label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <textarea class="form-control" name="comment" rows="3"
+                                                placeholder="Nhập nhận xét của bạn..." required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">Gửi đánh giá</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-9">
-                            <h4 class="mb-2">{{transaction.productName}}</h4>
-                            <p class="mb-1">
-                                <i class="fas fa-user me-1"></i>
-                                {{#if isBuyer}}
-                                    Người bán: <strong>{{transaction.sellerName}}</strong>
-                                {{else}}
-                                    Người mua: <strong>{{transaction.buyerName}}</strong>
-                                {{/if}}
-                            </p>
-                            <p class="mb-1">
-                                <i class="fas fa-clock me-1"></i>Ngày giao dịch: {{transaction.createdAt}}
-                            </p>
-                            <h3 class="text-success mb-0">
-                                <i class="fas fa-tag me-1"></i>{{transaction.price}}
-                            </h3>
+
+                        <!-- Partner Rating -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-light fw-bold">Đánh giá từ đối tác</div>
+                                <div class="card-body d-flex align-items-center justify-content-center">
+                                    {{#if isBuyer}}
+                                    {{#if transaction.sellerRating}}
+                                    <div class="text-center">
+                                        {{#if (eq transaction.sellerRating 1)}}<span class="text-success fs-1"><i
+                                                class="fas fa-thumbs-up"></i> +1</span>{{else}}<span
+                                            class="text-danger fs-1"><i class="fas fa-thumbs-down"></i> -1</span>{{/if}}
+                                        <p class="mt-2">{{transaction.sellerComment}}</p>
+                                    </div>
+                                    {{else}}
+                                    <p class="text-muted fst-italic">Người bán chưa đánh giá.</p>
+                                    {{/if}}
+                                    {{else}}
+                                    {{#if transaction.buyerRating}}
+                                    <div class="text-center">
+                                        {{#if (eq transaction.buyerRating 1)}}<span class="text-success fs-1"><i
+                                                class="fas fa-thumbs-up"></i> +1</span>{{else}}<span
+                                            class="text-danger fs-1"><i class="fas fa-thumbs-down"></i> -1</span>{{/if}}
+                                        <p class="mt-2">{{transaction.buyerComment}}</p>
+                                    </div>
+                                    {{else}}
+                                    <p class="text-muted fst-italic">Người mua chưa đánh giá.</p>
+                                    {{/if}}
+                                    {{/if}}
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    {{/if}}
+
                 </div>
             </div>
 
-            {{! Progress Tracker }}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Tiến trình hoàn tất đơn hàng</h5>
-                </div>
-                <div class="card-body">
-                    {{! Step 1: Payment }}
-                    <div class="completion-step {{#if (eq transaction.status 'PENDING')}}active{{/if}} {{#if (ne transaction.status 'PENDING')}}completed{{/if}}">
-                        <div class="step-icon">
-                            <i class="fas fa-credit-card"></i>
-                        </div>
-                        <div class="step-content">
-                            <h5>Bước 1: Thanh toán</h5>
-                            {{#if isBuyer}}
-                                <p class="text-muted mb-2">Cung cấp hoá đơn thanh toán và địa chỉ giao hàng</p>
-                                {{#if (eq transaction.status 'PENDING')}}
-                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                                    <i class="fas fa-upload me-1"></i>Upload hoá đơn thanh toán
-                                </button>
-                                {{else}}
-                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã hoàn thành</span>
-                                {{/if}}
-                            {{else}}
-                                <p class="text-muted">Chờ người mua cung cấp hoá đơn thanh toán</p>
-                                {{#if (ne transaction.status 'PENDING')}}
-                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã nhận hoá đơn</span>
-                                {{/if}}
-                            {{/if}}
-                        </div>
-                    </div>
-
-                    <div class="step-divider"></div>
-
-                    {{! Step 2: Shipping }}
-                    <div class="completion-step {{#if (eq transaction.status 'PAID')}}active{{/if}} {{#if (eq transaction.status 'SHIPPED')}}completed{{/if}} {{#if (eq transaction.status 'COMPLETED')}}completed{{/if}}">
-                        <div class="step-icon">
-                            <i class="fas fa-shipping-fast"></i>
-                        </div>
-                        <div class="step-content">
-                            <h5>Bước 2: Vận chuyển</h5>
-                            {{#if isSeller}}
-                                <p class="text-muted mb-2">Xác nhận đã nhận tiền và gửi hoá đơn vận chuyển</p>
-                                {{#if (eq transaction.status 'PAID')}}
-                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#shippingModal">
-                                    <i class="fas fa-truck me-1"></i>Xác nhận gửi hàng
-                                </button>
-                                {{else if (ne transaction.status 'PENDING')}}
-                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã gửi hàng</span>
-                                {{/if}}
-                            {{else}}
-                                <p class="text-muted">Chờ người bán xác nhận và gửi hàng</p>
-                                {{#if (eq transaction.status 'SHIPPED')}}
-                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đang giao hàng</span>
-                                {{else if (eq transaction.status 'COMPLETED')}}
-                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã giao hàng</span>
-                                {{/if}}
-                            {{/if}}
-                        </div>
-                    </div>
-
-                    <div class="step-divider"></div>
-
-                    {{! Step 3: Delivery Confirmation }}
-                    <div class="completion-step {{#if (eq transaction.status 'SHIPPED')}}active{{/if}} {{#if (eq transaction.status 'COMPLETED')}}completed{{/if}}">
-                        <div class="step-icon">
-                            <i class="fas fa-box-open"></i>
-                        </div>
-                        <div class="step-content">
-                            <h5>Bước 3: Xác nhận nhận hàng</h5>
-                            {{#if isBuyer}}
-                                <p class="text-muted mb-2">Xác nhận bạn đã nhận được hàng</p>
-                                {{#if (eq transaction.status 'SHIPPED')}}
-                                <button class="btn btn-success btn-sm" onclick="confirmReceived({{transaction.id}})">
-                                    <i class="fas fa-check me-1"></i>Đã nhận hàng
-                                </button>
-                                {{else if (eq transaction.status 'COMPLETED')}}
-                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã nhận hàng</span>
-                                {{/if}}
-                            {{else}}
-                                <p class="text-muted">Chờ người mua xác nhận đã nhận hàng</p>
-                                {{#if (eq transaction.status 'COMPLETED')}}
-                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã xác nhận</span>
-                                {{/if}}
-                            {{/if}}
-                        </div>
-                    </div>
-
-                    <div class="step-divider"></div>
-
-                    {{! Step 4: Rating }}
-                    <div class="completion-step {{#if (eq transaction.status 'COMPLETED')}}active{{/if}}">
-                        <div class="step-icon">
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <div class="step-content">
-                            <h5>Bước 4: Đánh giá</h5>
-                            <p class="text-muted mb-2">Đánh giá chất lượng giao dịch</p>
-                            {{#if (eq transaction.status 'COMPLETED')}}
-                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#ratingModal">
-                                <i class="fas fa-star me-1"></i>Đánh giá
-                            </button>
-                            {{else}}
-                            <span class="text-muted">Chờ hoàn tất đơn hàng</span>
-                            {{/if}}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{! Right: Actions & Chat }}
-        <div class="col-lg-4">
-            {{! Seller Can Cancel }}
-            {{#if isSeller}}
-            <div class="card shadow-sm mb-4 border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-1"></i>Quyền người bán</h6>
-                </div>
-                <div class="card-body">
-                    <p class="small mb-2">Bạn có thể hủy giao dịch bất kỳ lúc nào nếu người mua không thanh toán đúng hạn.</p>
-                    <button class="btn btn-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                        <i class="fas fa-times me-1"></i>Hủy giao dịch
+            <!-- Seller Cancel Action -->
+            {{#if (and isSeller (ne transaction.status 'COMPLETED'))}}
+            <div class="mt-4 text-end">
+                <form action="/transactions/{{transaction.id}}/cancel" method="POST"
+                    onsubmit="return confirm('Bạn có chắc chắn muốn hủy giao dịch? Người mua sẽ bị đánh giá -1.');">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="fas fa-times-circle me-1"></i> Hủy giao dịch
                     </button>
-                </div>
+                </form>
             </div>
             {{/if}}
-
-            {{! Chat Box }}
-            <div class="card shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="fas fa-comments me-1"></i>Trò chuyện</h6>
-                </div>
-                <div class="card-body" style="height: 400px; overflow-y: auto;" id="chatBox">
-                    <p class="text-muted text-center">Tính năng chat đang được phát triển...</p>
-                </div>
-                <div class="card-footer">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Nhập tin nhắn..." id="chatInput">
-                        <button class="btn btn-info" id="sendChatBtn">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </div>
+            {{else}}
+            <!-- Cancelled View -->
+            <div class="alert alert-danger text-center mt-4">
+                <h4><i class="fas fa-ban me-2"></i>Giao dịch đã bị hủy</h4>
+                <p>Giao dịch này đã bị hủy bởi người bán.</p>
             </div>
+            {{/unless}}
         </div>
-    </div>
-</div>
 
-{{! Modal: Payment Upload (Buyer) }}
-<div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-credit-card me-2"></i>Upload hoá đơn thanh toán</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="/transactions/{{transaction.id}}/payment" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Hoá đơn thanh toán</label>
-                        <input type="file" class="form-control" name="paymentProof" accept="image/*" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Địa chỉ giao hàng</label>
-                        <textarea class="form-control" name="shippingAddress" rows="3" required></textarea>
-                    </div>
+        <!-- Right Column: Chat -->
+        <div class="col-lg-4">
+            <div class="chat-box">
+                <div class="p-3 border-bottom bg-light fw-bold">
+                    <i class="fas fa-comments me-2"></i>Trao đổi
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Xác nhận</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{{! Modal: Shipping (Seller) }}
-<div class="modal fade" id="shippingModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-truck me-2"></i>Xác nhận gửi hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="/transactions/{{transaction.id}}/shipping">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Mã vận đơn</label>
-                        <input type="text" class="form-control" name="trackingNumber" required>
+                <div class="chat-messages" id="chatMessages">
+                    {{#each chats}}
+                    <div class="message {{#if (eq this.sender_id ../authUser.id)}}sent{{else}}received{{/if}}">
+                        <div class="small fw-bold mb-1">{{this.sender_name}}</div>
+                        <div>{{this.content}}</div>
+                        <div class="text-end text-muted" style="font-size: 0.7rem;">{{formatRelativeTime
+                            this.created_at}}</div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Đơn vị vận chuyển</label>
-                        <select class="form-select" name="shippingCompany" required>
-                            <option value="">-- Chọn đơn vị --</option>
-                            <option value="GHTK">Giao hàng tiết kiệm</option>
-                            <option value="GHN">Giao hàng nhanh</option>
-                            <option value="VNPost">VNPost</option>
-                            <option value="JT">J&T Express</option>
-                            <option value="OTHER">Khác</option>
-                        </select>
-                    </div>
+                    {{/each}}
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Xác nhận gửi hàng</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{{! Modal: Rating }}
-<div class="modal fade" id="ratingModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-star me-2"></i>Đánh giá giao dịch</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="/transactions/{{transaction.id}}/rate">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Đánh giá</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="score" id="positive" value="1" required>
-                            <label class="btn btn-outline-success" for="positive">
-                                <i class="fas fa-thumbs-up me-1"></i>Tích cực (+1)
-                            </label>
-                            
-                            <input type="radio" class="btn-check" name="score" id="negative" value="-1" required>
-                            <label class="btn btn-outline-danger" for="negative">
-                                <i class="fas fa-thumbs-down me-1"></i>Tiêu cực (-1)
-                            </label>
+                <div class="p-3 border-top">
+                    <form action="/transactions/{{transaction.id}}/chat" method="POST">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="content" placeholder="Nhập tin nhắn..."
+                                required {{#if transaction.isCancelled}}disabled{{/if}}>
+                            <button class="btn btn-primary" type="submit" {{#if
+                                transaction.isCancelled}}disabled{{/if}}>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nhận xét (không bắt buộc)</label>
-                        <textarea class="form-control" name="content" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
-                    </div>
+                    </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-warning">Gửi đánh giá</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{{! Modal: Cancel Transaction (Seller) }}
-<div class="modal fade" id="cancelModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-times-circle me-2"></i>Hủy giao dịch</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="/transactions/{{transaction.id}}/cancel">
-                <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Người mua sẽ nhận đánh giá -1 sau khi bạn hủy giao dịch.
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Lý do hủy</label>
-                        <textarea class="form-control" name="reason" rows="3" required placeholder="Ví dụ: Người mua không thanh toán trong vòng 24h"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
 
-<style>
-.completion-step {
-    display: flex;
-    gap: 20px;
-    padding: 20px 0;
-    opacity: 0.5;
-}
-
-.completion-step.active,
-.completion-step.completed {
-    opacity: 1;
-}
-
-.step-icon {
-    flex-shrink: 0;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: #e9ecef;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: #6c757d;
-}
-
-.completion-step.active .step-icon {
-    background: #0d6efd;
-    color: white;
-}
-
-.completion-step.completed .step-icon {
-    background: #198754;
-    color: white;
-}
-
-.step-content {
-    flex: 1;
-}
-
-.step-content h5 {
-    margin-bottom: 5px;
-    font-size: 18px;
-}
-
-.step-divider {
-    height: 30px;
-    border-left: 2px dashed #dee2e6;
-    margin-left: 29px;
-}
-</style>
-
+{{#section 'js'}}
 <script>
-function confirmReceived(transactionId) {
-    if (confirm('Xác nhận bạn đã nhận được hàng?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/transactions/${transactionId}/confirm-received`;
-        document.body.appendChild(form);
-        form.submit();
+    // Auto scroll chat to bottom
+    const chatContainer = document.getElementById('chatMessages');
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-}
 </script>
+{{/section}}
