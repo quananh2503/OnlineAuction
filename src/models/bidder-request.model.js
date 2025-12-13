@@ -5,7 +5,9 @@ module.exports = {
     async getBidderRequests(status) {
         const sql = `
             SELECT br.id, br.user_id, br.created_at,
-                   u.name,u.email ,COALESCE(u.bidder_average_rating, -1) as rating
+                   br.approved_at, br.approved_by,
+                   br.rejected_at, br.rejected_by,
+                   u.name, u.email, COALESCE(u.bidder_average_rating, -1) as rating
             FROM bidder_requests br
             JOIN users u ON br.user_id = u.id
             WHERE br.status = $1

@@ -17,13 +17,12 @@ module.exports = {
                     current_price, avatar_url, 
                     starts_at, ends_at, 
                     status, seller_allows_unrated_bidders,
+                    auto_extend,
                     description
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, 'ACTIVE', $10, $11)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, 'ACTIVE', $10, $11, $12)
                 RETURNING id
             `;
-            // Mặc định auto_extend logic có thể xử lý ở cronjob, ở đây ta lưu cơ bản
-            // Giả sử data.auto_extend được lưu vào bảng products nếu có cột, hoặc xử lý riêng
 
             const productRes = await client.query(productSql, [
                 sellerId,
@@ -36,6 +35,7 @@ module.exports = {
                 data.avatar_url,
                 data.ends_at, // Use passed ends_at
                 data.seller_allows_unrated_bidders,
+                data.auto_extend || false, // Tự động gia hạn (mặc định false)
                 data.description
             ]);
             const productId = productRes.rows[0].id;
@@ -231,6 +231,17 @@ module.exports = {
             RETURNING *
         `;
         const result = await db.query(sql, [transactionId, sellerId, transaction.buyer_id, score, content]);
+
+        // Update buyer stats
+        const isPositive = score === 1;
+        await db.query(`
+            UPDATE users 
+            SET bidder_total_ratings_count = bidder_total_ratings_count + 1,
+                bidder_positive_ratings_count = bidder_positive_ratings_count + ${isPositive ? 1 : 0},
+                bidder_average_rating = (bidder_positive_ratings_count + ${isPositive ? 1 : 0})::float / (bidder_total_ratings_count + 1)
+            WHERE id = $1
+        `, [transaction.buyer_id]);
+
         return result.rows[0];
     },
 

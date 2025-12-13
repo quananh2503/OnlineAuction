@@ -2,6 +2,7 @@ const categoryModel = require('../models/category.model');
 const productModel = require('../models/product.model');
 const bidderRequestModel = require('../models/bidder-request.model');
 const userModel = require('../models/user.model');
+const db = require('../configs/db');
 
 module.exports = {
     // Dashboard - Trang chính admin
@@ -262,7 +263,7 @@ module.exports = {
 
             // Format pending requests
             const formattedPending = pendingRequests.map(r => {
-                const rating = r.rating >= 0 ? Math.round(r.rating) : 'Chưa có đánh giá';
+                const rating = r.rating >= 0 ? (r.rating * 100).toFixed(0) + '%' : 'Chưa có đánh giá';
                 return {
                     id: r.id,
                     name: r.name,
@@ -274,29 +275,27 @@ module.exports = {
 
             // Format approved requests
             const formattedApproved = approvedRequests.map(r => {
-                const total = (r.rating_positive_count || 0) + (r.rating_negative_count || 0);
-                const rating = total > 0 ? Math.round((r.rating_positive_count / total) * 100) : 0;
+                const rating = r.rating >= 0 ? (r.rating * 100).toFixed(0) + '%' : 'N/A';
                 return {
                     id: r.id,
                     name: r.name,
                     email: r.email,
                     rating: rating,
                     approvedDate: new Date(r.approved_at).toLocaleString('vi-VN'),
-                    approvedBy: r.approved_by || 'Admin'
+                    approvedBy: 'Admin'
                 };
             });
 
             // Format rejected requests
             const formattedRejected = rejectedRequests.map(r => {
-                const total = (r.rating_positive_count || 0) + (r.rating_negative_count || 0);
-                const rating = total > 0 ? Math.round((r.rating_positive_count / total) * 100) : 0;
+                const rating = r.rating >= 0 ? (r.rating * 100).toFixed(0) + '%' : 'N/A';
                 return {
                     id: r.id,
                     name: r.name,
                     email: r.email,
                     rating: rating,
                     rejectedDate: new Date(r.rejected_at).toLocaleString('vi-VN'),
-                    rejectedBy: r.rejected_by || 'Admin'
+                    rejectedBy: 'Admin'
                 };
             });
 
@@ -383,34 +382,67 @@ module.exports = {
     // Quản lý người dùng - Danh sách
     async listUsers(req, res, next) {
         try {
+            const db = require('../configs/db');
             const { search, role, status } = req.query;
 
-            // Dữ liệu giả - Users
-            const allUsers = [
-                { id: 1, name: 'Nguyễn Văn A', nameInitial: 'NA', email: 'nguyenvana@email.com', role: 'SELLER', status: 'ACTIVE', rating: 8.5, createdAt: '2024-12-01' },
-                { id: 2, name: 'Trần Thị B', nameInitial: 'TB', email: 'tranthib@email.com', role: 'BIDDER', status: 'ACTIVE', rating: 9.2, createdAt: '2024-12-05' },
-                { id: 3, name: 'Lê Minh C', nameInitial: 'LC', email: 'leminhc@email.com', role: 'SELLER', status: 'ACTIVE', rating: 7.8, createdAt: '2024-12-10' },
-                { id: 4, name: 'Phạm Thị D', nameInitial: 'PD', email: 'phamthid@email.com', role: 'BIDDER', status: 'INACTIVE', rating: 6.5, createdAt: '2024-12-15' },
-                { id: 5, name: 'Hoàng Văn E', nameInitial: 'HE', email: 'hoangvane@email.com', role: 'BIDDER', status: 'BANNED', rating: 4.2, createdAt: '2024-11-20' }
-            ];
-
-            // Lọc users (giả)
-            let users = allUsers;
+            // Build query với điều kiện lọc
+            let conditions = [];
+            let params = [];
+            let paramIndex = 1;
 
             if (search) {
-                users = users.filter(u =>
-                    u.name.toLowerCase().includes(search.toLowerCase()) ||
-                    u.email.toLowerCase().includes(search.toLowerCase())
-                );
+                conditions.push(`(LOWER(name) LIKE $${paramIndex} OR LOWER(email) LIKE $${paramIndex})`);
+                params.push(`%${search.toLowerCase()}%`);
+                paramIndex++;
             }
 
             if (role) {
-                users = users.filter(u => u.role === role);
+                conditions.push(`role = $${paramIndex}`);
+                params.push(role);
+                paramIndex++;
             }
 
             if (status) {
-                users = users.filter(u => u.status === status);
+                conditions.push(`status = $${paramIndex}`);
+                params.push(status);
+                paramIndex++;
             }
+
+            const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+            // Lấy dữ liệu thật từ database
+            const query = `
+                SELECT 
+                    id, 
+                    name, 
+                    email, 
+                    role, 
+                    status,
+                    created_at,
+                    -- Tính rating theo role (dạng phần trăm)
+                    CASE 
+                        WHEN role = 'SELLER' THEN seller_average_rating * 100
+                        WHEN role = 'BIDDER' THEN bidder_average_rating * 100
+                        ELSE NULL
+                    END as rating
+                FROM users
+                ${whereClause}
+                ORDER BY created_at DESC
+            `;
+
+            const result = await db.query(query, params);
+
+            // Format data cho view
+            const users = result.rows.map(u => ({
+                id: u.id,
+                name: u.name,
+                nameInitial: u.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
+                email: u.email,
+                role: u.role,
+                status: u.status,
+                rating: u.rating != null ? parseFloat(u.rating).toFixed(0) + '%' : 'N/A',
+                createdAt: new Date(u.created_at).toISOString().split('T')[0]
+            }));
 
             res.render('admin/users', {
                 users,
@@ -455,6 +487,62 @@ module.exports = {
         } catch (error) {
             console.error('Error unbanning user:', error);
             res.redirect('/admin/users?error=' + encodeURIComponent(error.message));
+        }
+    },
+
+    // Settings Management
+    async getSettings(req, res, next) {
+        try {
+            // Fetch current settings from database
+            const { rows } = await db.query('SELECT key, value FROM system_settings');
+            const settings = {};
+            rows.forEach(row => {
+                settings[row.key] = row.value;
+            });
+
+            // Set defaults if not exists
+            if (!settings.auto_extend_minutes) {
+                settings.auto_extend_minutes = '5';
+            }
+
+            res.render('admin/settings', {
+                settings,
+                success_msg: req.flash('success_msg'),
+                error_msg: req.flash('error_msg'),
+                isAuth: req.isAuthenticated(),
+                authUser: req.user
+            });
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            next(error);
+        }
+    },
+
+    async updateSettings(req, res, next) {
+        try {
+            const { auto_extend_minutes } = req.body;
+
+            // Validate
+            const minutes = parseInt(auto_extend_minutes);
+            if (isNaN(minutes) || minutes < 1 || minutes > 60) {
+                req.flash('error_msg', 'Thời gian gia hạn phải từ 1 đến 60 phút');
+                return res.redirect('/admin/settings');
+            }
+
+            // Update or insert setting
+            await db.query(`
+                INSERT INTO system_settings (key, value, description, updated_at)
+                VALUES ('auto_extend_minutes', $1, 'Thời gian gia hạn tự động cho đấu giá (phút)', NOW())
+                ON CONFLICT (key) 
+                DO UPDATE SET value = $1, updated_at = NOW()
+            `, [minutes.toString()]);
+
+            req.flash('success_msg', 'Đã cập nhật cài đặt thành công!');
+            res.redirect('/admin/settings');
+        } catch (error) {
+            console.error('Error updating settings:', error);
+            req.flash('error_msg', 'Có lỗi xảy ra: ' + error.message);
+            res.redirect('/admin/settings');
         }
     }
 };

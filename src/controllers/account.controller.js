@@ -1,5 +1,5 @@
 const db = require('../configs/db');
-const { formatMoney, maskName, ratingSummary } = require('../utils/format');
+const { formatMoney, maskName } = require('../utils/format');
 const { formatAbsolute, formatRelativeOrAbsolute } = require('../utils/time');
 const userModel = require('../models/user.model');
 const bidderRequestModel = require('../models/bidder-request.model');
@@ -38,8 +38,19 @@ module.exports = {
                 date: formatAbsolute(r.created_at)
             }));
 
-            const bidderRating = ratingSummary(user.bidder_positive_ratings_count, user.bidder_total_ratings_count - user.bidder_positive_ratings_count);
-            const sellerRating = ratingSummary(user.seller_positive_ratings_count, user.seller_total_ratings_count - user.seller_positive_ratings_count);
+            // Bidder rating: dùng average_rating đã tính sẵn, hiển thị dạng %
+            const bidderRating = {
+                stars: user.bidder_average_rating != null ? (user.bidder_average_rating * 100).toFixed(0) + '%' : null,
+                total: user.bidder_total_ratings_count || 0,
+                ratio: user.bidder_average_rating != null ? (user.bidder_average_rating * 100).toFixed(0) : null
+            };
+
+            // Seller rating: dùng average_rating đã tính sẵn, hiển thị dạng %
+            const sellerRating = {
+                stars: user.seller_average_rating != null ? (user.seller_average_rating * 100).toFixed(0) + '%' : null,
+                total: user.seller_total_ratings_count || 0,
+                ratio: user.seller_average_rating != null ? (user.seller_average_rating * 100).toFixed(0) : null
+            };
 
             // Check seller request status
             let showSellerRequest = false;
@@ -203,7 +214,8 @@ module.exports = {
             await db.query(`
                 UPDATE users 
                 SET seller_total_ratings_count = seller_total_ratings_count + 1,
-                    seller_positive_ratings_count = seller_positive_ratings_count + ${isPositive ? 1 : 0}
+                    seller_positive_ratings_count = seller_positive_ratings_count + ${isPositive ? 1 : 0},
+                    seller_average_rating = (seller_positive_ratings_count + ${isPositive ? 1 : 0})::float / (seller_total_ratings_count + 1)
                 WHERE id = $1
             `, [transaction.seller_id]);
 

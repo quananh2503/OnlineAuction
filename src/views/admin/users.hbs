@@ -1,9 +1,5 @@
 <div class="row">
-    <aside class="col-md-3">
-        {{> categoryMenu}}
-    </aside>
-    
-    <div class="col-md-9">
+    <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2><i class="fas fa-users me-2"></i>Quản lý người dùng</h2>
         </div>
@@ -82,7 +78,7 @@
                             <span class="badge bg-info">Bidder</span>
                             {{/if}}
                         </td>
-                        <td>{{this.rating}}/10</td>
+                        <td>{{this.rating}}</td>
                         <td>
                             {{#if (eq this.status 'ACTIVE')}}
                             <span class="badge bg-success">Hoạt động</span>

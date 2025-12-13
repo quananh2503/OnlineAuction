@@ -7,7 +7,7 @@ const categoriesModel = require('../models/category.model');
 const productModel = require('../models/product.model');
 const db = require('../configs/db');
 const { supabase } = require('../utils/supabaseClient');
-const { formatMoney, maskName, ratingSummary } = require('../utils/format');
+const { formatMoney, maskName } = require('../utils/format');
 const { formatAbsolute, formatRelativeOrAbsolute } = require('../utils/time');
 const {
     sendQuestionNotification,
@@ -91,11 +91,11 @@ async function loadProductDetail(productId, currentUserId) {
     const productSql = `
         SELECT p.*, c.name AS category_name,
                s.name AS seller_name, s.email AS seller_email,
-               s.seller_positive_ratings_count AS seller_rating_positive,
-               (s.seller_total_ratings_count - s.seller_positive_ratings_count) AS seller_rating_negative,
+               s.seller_average_rating,
+               s.seller_total_ratings_count,
                w.name AS highest_bidder_name,
-               w.bidder_positive_ratings_count AS highest_bidder_positive,
-               (w.bidder_total_ratings_count - w.bidder_positive_ratings_count) AS highest_bidder_negative
+               w.bidder_average_rating,
+               w.bidder_total_ratings_count
         FROM products p
         JOIN categories c ON p.category_id = c.id
         JOIN users s ON p.seller_id = s.id
@@ -139,8 +139,21 @@ async function loadProductDetail(productId, currentUserId) {
     }
 
     const product = productRes.rows[0];
-    const sellerRating = ratingSummary(product.seller_rating_positive, product.seller_rating_negative);
-    const bidderRating = ratingSummary(product.highest_bidder_positive, product.highest_bidder_negative);
+    
+    // Seller rating: dùng average_rating đã tính sẵn, hiển thị dạng %
+    const sellerRating = {
+        stars: product.seller_average_rating != null ? (product.seller_average_rating * 100).toFixed(0) + '%' : 'N/A',
+        total: product.seller_total_ratings_count || 0,
+        ratio: product.seller_average_rating != null ? (product.seller_average_rating * 100).toFixed(0) : 0
+    };
+    
+    // Bidder rating: dùng average_rating đã tính sẵn, hiển thị dạng %
+    const bidderRating = {
+        stars: product.bidder_average_rating != null ? (product.bidder_average_rating * 100).toFixed(0) + '%' : 'N/A',
+        total: product.bidder_total_ratings_count || 0,
+        ratio: product.bidder_average_rating != null ? (product.bidder_average_rating * 100).toFixed(0) : 0
+    };
+    
     const gallery = imagesRes.rows.length ? imagesRes.rows.map((img) => img.url) : [product.avatar_url];
 
     let description = product.description;
@@ -496,10 +509,34 @@ async function placeBid(req, res, next) {
             `INSERT INTO bids (product_id, bidder_id, price, status) VALUES ($1, $2, $3, 'ACTIVE')`,
             [productId, req.user.id, bidAmount]
         );
-        await client.query(
-            `UPDATE products SET current_price = $1, bid_count = bid_count + 1, winner_id = $2 WHERE id = $3`,
-            [bidAmount, req.user.id, productId]
-        );
+        
+        // Auto-extend logic: Nếu product có auto_extend = true, gia hạn thời gian
+        if (product.auto_extend) {
+            // Lấy cấu hình thời gian gia hạn (mặc định 5 phút)
+            const extendMinutesRes = await client.query(
+                `SELECT value FROM system_settings WHERE key = 'auto_extend_minutes'`
+            );
+            const extendMinutes = extendMinutesRes.rows.length > 0 
+                ? parseInt(extendMinutesRes.rows[0].value) 
+                : 5;
+            
+            // Cập nhật ends_at = MAX(NOW() + extendMinutes, ends_at hiện tại)
+            await client.query(
+                `UPDATE products 
+                 SET current_price = $1, 
+                     bid_count = bid_count + 1, 
+                     winner_id = $2,
+                     ends_at = GREATEST(NOW() + INTERVAL '${extendMinutes} minutes', ends_at)
+                 WHERE id = $3`,
+                [bidAmount, req.user.id, productId]
+            );
+        } else {
+            // Không auto-extend, chỉ cập nhật giá và winner
+            await client.query(
+                `UPDATE products SET current_price = $1, bid_count = bid_count + 1, winner_id = $2 WHERE id = $3`,
+                [bidAmount, req.user.id, productId]
+            );
+        }
 
         await client.query('COMMIT');
 

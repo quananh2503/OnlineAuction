@@ -1,0 +1,77 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-cog me-2"></i>Cài đặt hệ thống</h2>
+        </div>
+
+        {{#if success_msg}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>{{success_msg}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {{/if}}
+
+        {{#if error_msg}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>{{error_msg}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {{/if}}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Cài đặt đấu giá</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/settings/update">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="auto_extend_minutes" class="form-label">
+                                    <i class="fas fa-hourglass-half me-1"></i>
+                                    Thời gian gia hạn tự động (phút)
+                                </label>
+                                <input type="number" class="form-control" id="auto_extend_minutes" 
+                                       name="auto_extend_minutes" value="{{settings.auto_extend_minutes}}" 
+                                       min="1" max="60" required>
+                                <div class="form-text">
+                                    Khi có người đặt giá mới, phiên đấu giá sẽ tự động gia hạn thêm số phút này (nếu người bán bật tính năng auto-extend).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lưu ý:</strong> Thay đổi cài đặt này sẽ áp dụng cho tất cả các phiên đấu giá có bật tính năng gia hạn tự động.
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Lưu cài đặt
+                        </button>
+                        <a href="/admin" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Quay lại
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{! Card thông tin thêm }}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Hướng dẫn</h5>
+            </div>
+            <div class="card-body">
+                <h6>Tính năng gia hạn tự động:</h6>
+                <ul>
+                    <li>Khi người bán tạo sản phẩm, họ có thể chọn bật/tắt tính năng gia hạn tự động</li>
+                    <li>Nếu bật: mỗi khi có người đặt giá mới, thời gian kết thúc sẽ được gia hạn thêm</li>
+                    <li>Công thức: <code>ends_at = GREATEST(NOW() + thời_gian_gia_hạn, ends_at_hiện_tại)</code></li>
+                    <li>Điều này giúp tránh trường hợp có người đặt giá ở giây cuối và người khác không kịp phản ứng</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

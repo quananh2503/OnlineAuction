@@ -30,4 +30,8 @@ router.post('/bidder-requests/:id/approve', adminController.approveBidderRequest
 router.post('/bidder-requests/:id/reject', adminController.rejectBidderRequest);
 router.get('/bidder-requests', adminController.postBidderRequest);
 
+// Settings Management
+router.get('/settings', adminController.getSettings);
+router.post('/settings/update', adminController.updateSettings);
+
 module.exports = router;
