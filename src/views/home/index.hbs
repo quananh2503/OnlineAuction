@@ -6,6 +6,35 @@
     </div>
 </section>
 
+{{#if showSellerUpgrade}}
+<section class="container mb-4">
+    <div class="alert alert-info mb-0">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="mb-2"><i class="fas fa-store me-2"></i>Trở thành Seller ngay hôm nay!</h5>
+                {{#if (eq sellerRequestStatus 'PENDING')}}
+                <p class="mb-0"><i class="fas fa-clock me-2"></i>Yêu cầu nâng cấp lên Seller đang chờ admin duyệt...</p>
+                {{else if (eq sellerRequestStatus 'REJECTED')}}
+                <p class="mb-2"><i class="fas fa-times-circle me-2"></i>Yêu cầu nâng cấp lên Seller đã bị từ chối.</p>
+                <form action="/account/request-seller" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="fas fa-redo me-2"></i>Gửi lại yêu cầu
+                    </button>
+                </form>
+                {{else}}
+                <p class="mb-2">Đăng bán sản phẩm và kiếm tiền ngay trên nền tảng của chúng tôi!</p>
+                <form action="/account/request-seller" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="fas fa-paper-plane me-2"></i>Yêu cầu trở thành Seller
+                    </button>
+                </form>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</section>
+{{/if}}
+
 <section class="home-section container mb-5">
     <div class="home-section__header d-flex justify-content-between align-items-center mb-4">
         <h2 class="home-section__title">Top Sản Phẩm Sắp Kết Thúc ⏰</h2>

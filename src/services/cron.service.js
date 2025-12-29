@@ -3,6 +3,43 @@ const transactionModel = require('../models/transaction.model');
 
 const CHECK_INTERVAL = 60 * 1000; // 1 minute
 
+// Kiểm tra và tự động chuyển seller hết hạn về BIDDER
+async function checkExpiredSellers() {
+    try {
+        // Tìm các seller đã hết hạn (seller_expiration_date < NOW() và role = 'SELLER')
+        const sql = `
+            SELECT id, email, name, seller_expiration_date
+            FROM users
+            WHERE role = 'SELLER'
+            AND seller_expiration_date IS NOT NULL
+            AND seller_expiration_date < NOW()
+        `;
+
+        const { rows } = await db.query(sql);
+
+        if (rows.length > 0) {
+            console.log(`[SellerExpiration] Tìm thấy ${rows.length} seller đã hết hạn. Đang chuyển về BIDDER...`);
+        }
+
+        for (const user of rows) {
+            try {
+                // Chuyển về BIDDER và xóa seller_expiration_date
+                await db.query(`
+                    UPDATE users
+                    SET role = 'BIDDER', seller_expiration_date = NULL
+                    WHERE id = $1
+                `, [user.id]);
+
+                console.log(`[SellerExpiration] Đã chuyển user ${user.email} (ID: ${user.id}) từ SELLER về BIDDER do hết hạn.`);
+            } catch (error) {
+                console.error(`[SellerExpiration] Lỗi khi chuyển user ${user.id} về BIDDER:`, error);
+            }
+        }
+    } catch (error) {
+        console.error('[SellerExpiration] Lỗi khi kiểm tra seller hết hạn:', error);
+    }
+}
+
 async function checkOverduePayments() {
     try {
         // Find transactions that are PENDING and overdue
@@ -39,9 +76,15 @@ async function checkOverduePayments() {
 
 function start() {
     console.log('Starting cron jobs...');
+    
+    // Chạy kiểm tra thanh toán quá hạn
     setInterval(checkOverduePayments, CHECK_INTERVAL);
-    // Run immediately on start
     checkOverduePayments();
+    
+    // Chạy kiểm tra seller hết hạn (mỗi 1 phút)
+    setInterval(checkExpiredSellers, CHECK_INTERVAL);
+    // Chạy ngay khi khởi động server
+    checkExpiredSellers();
 }
 
 module.exports = { start };

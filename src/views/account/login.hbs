@@ -1,18 +1,18 @@
 <div class="container flex-grow-1  d-flex justify-content-center  align-items-center ">
     <div class="card shadow-lg border-0 rounded-lg bg-light p-4 rounded  col-lg-5">
         <div class=" d-flex justify-content-center ">
-            <h2 class="fw-bold">Login</h2>
+            <h2 class="fw-bold">Đăng nhập</h2>
         </div>
         {{#if error_msg}}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{error_msg}}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
         </div>
         {{/if}}
          {{#if success_msg}}
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{success_msg}}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
         </div>
         {{/if}}
         <form action="/auth/login" method="POST" id="loginForm">
@@ -22,24 +22,24 @@
                 <label for="emailInput">Email</label>
             </div>
             <div class=" form-floating mb-3">
-                <input type="password" name="password" id="passwordInput" placeholder="password" class="form-control"
+                <input type="password" name="password" id="passwordInput" placeholder="Nhập mật khẩu" class="form-control"
                     required>
-                <label for="passwordInput" class="form-label">Password</label>
+                <label for="passwordInput" class="form-label">Mật khẩu</label>
             </div>
             
             {{! Hidden input để chứa reCAPTCHA token }}
             <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
             
             <div class=" mb-3">
-                <button type="submit" class="btn btn-primary w-100">Login</button>
+                <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
             </div>
             <div class=" mb-3 d-flex justify-content-center">
-                <span class=" pe-1">If you don't have an account</span>
-                <a href="/auth/register" class="">Register here</a>
+                <span class=" pe-1">Nếu bạn chưa có tài khoản,</span>
+                <a href="/auth/register" class="">đăng ký tại đây</a>
             </div>
             <div class="mb-3 d-flex">
                 <hr class="flex-grow-1">
-                <span class="mx-2 text-muted">or</span>
+                <span class="mx-2 text-muted">hoặc</span>
                 <hr class="flex-grow-1">
             </div>
             <div class="row mb-3">

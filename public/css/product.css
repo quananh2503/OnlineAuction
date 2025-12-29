@@ -19,12 +19,35 @@
     object-fit: cover;
     border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease, border 0.2s ease;
 }
 
 .product-gallery-thumbs img:hover {
-    opacity: 0.85;
+    opacity: 1;
     transform: translateY(-4px);
+}
+
+.product-gallery-thumbs img.active {
+    border: 3px solid #0d6efd !important;
+    opacity: 1;
+}
+
+.gallery-nav-btn {
+    opacity: 0.8;
+    transition: opacity 0.3s, transform 0.2s;
+}
+
+.gallery-nav-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.main-product-image {
+    transition: transform 0.3s ease;
+}
+
+.main-product-image:hover {
+    transform: scale(1.02);
 }
 
 .product-price-card {

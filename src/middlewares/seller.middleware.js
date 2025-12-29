@@ -1,16 +1,38 @@
 const db = require('../configs/db');
 
+// Helper function: Kiểm tra request có muốn JSON không
+function wantsJson(req) {
+    return Boolean(
+        req.xhr ||
+        req.headers['x-requested-with'] === 'XMLHttpRequest' ||
+        (req.headers.accept && req.headers.accept.includes('application/json'))
+    );
+}
+
 module.exports = {
     // Middleware: Kiểm tra user có phải là Seller và còn hạn không
     async requireSeller(req, res, next) {
         if (!req.isAuthenticated || !req.isAuthenticated()) {
-            return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+            // Nếu là AJAX request thì trả JSON, không thì redirect
+            if (wantsJson(req)) {
+                return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+            }
+            req.session.returnTo = req.originalUrl;
+            return res.redirect('/auth/login');
         }
 
         const user = req.user;
 
+        // Kiểm tra nếu không phải SELLER
         if (user.role !== 'SELLER') {
-            return res.status(403).json({ success: false, message: 'Bạn không có quyền Seller.' });
+            // Nếu là AJAX request thì trả JSON, không thì render trang 403
+            if (wantsJson(req)) {
+                return res.status(403).json({ success: false, message: 'Bạn không có quyền Seller.' });
+            }
+            return res.status(403).render('403', {
+                message: 'Bạn không có quyền Seller.',
+                layout: false
+            });
         }
 
         // Kiểm tra thời hạn 7 ngày
@@ -18,11 +40,16 @@ module.exports = {
             const now = new Date();
             const expiration = new Date(user.seller_expiration_date);
             if (now > expiration) {
-                // Hết hạn -> Hạ cấp về BIDDER (có thể làm tự động ở đây hoặc cronjob)
-                // Ở đây ta chỉ chặn quyền và thông báo
-                return res.status(403).json({
-                    success: false,
-                    message: 'Quyền Seller của bạn đã hết hạn. Vui lòng gia hạn.'
+                // Nếu là AJAX request thì trả JSON, không thì render trang 403
+                if (wantsJson(req)) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Quyền Seller của bạn đã hết hạn. Vui lòng gia hạn.'
+                    });
+                }
+                return res.status(403).render('403', {
+                    message: 'Quyền Seller của bạn đã hết hạn. Vui lòng gia hạn.',
+                    layout: false
                 });
             }
         }

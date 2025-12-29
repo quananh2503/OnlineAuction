@@ -14,15 +14,14 @@ router.post('/profile', accountController.postProfile);
 // Bidding List
 router.get('/bidding', accountController.getBidding);
 
-// Won List & Ratings
-router.get('/won', accountController.getWon);
-router.post('/rate', accountController.postRating);
-
 // Change Password
 router.get('/change-password', authController.getChangePassword);
 router.post('/change-password', authController.postChangePassword);
 
 // Request Seller
 router.post('/request-seller', authController.postRequestSeller);
+
+// Renew Seller (for users who have been seller before)
+router.post('/renew-seller', accountController.renewSeller);
 
 module.exports = router;

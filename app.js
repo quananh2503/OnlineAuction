@@ -1,5 +1,16 @@
 
 require('dotenv').config();
+
+// Suppress deprecation warnings from dependencies (e.g., passport, connect-pg-simple)
+process.on('warning', (warning) => {
+    if (warning.name === 'DeprecationWarning' && warning.message.includes('util.isArray')) {
+        // Suppress util.isArray deprecation warnings from dependencies
+        return;
+    }
+    // Show other warnings normally
+    console.warn(warning.name, warning.message);
+});
+
 console.log('--- KIỂM TRA BIẾN MÔI TRƯỜNG ---');
 console.log('DB Host:', process.env.DB_HOST);
 console.log('DB Port:', process.env.DB_PORT);
@@ -62,6 +73,8 @@ app.use(function (req, res, next) {
     res.locals.authUser = req.user;
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
+    // favicon version for cache-busting (increment to force clients to reload favicon)
+    res.locals.faviconVersion = process.env.FAVICON_VERSION || '1';
     next();
 });// gán user vào biến result.local
 

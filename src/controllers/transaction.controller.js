@@ -200,13 +200,117 @@ module.exports = {
         try {
             const { id } = req.params;
             const { rating, comment } = req.body;
-            const role = req.user.id === (await transactionModel.getById(id)).buyer_id ? 'buyer' : 'seller';
+            const userId = req.user.id;
+            const ratingInt = parseInt(rating);
+            
+            // Validate rating
+            if (![-1, 1].includes(ratingInt)) {
+                req.flash('error_msg', 'Điểm đánh giá không hợp lệ.');
+                return res.redirect(`/transactions/${id}`);
+            }
 
-            await transactionModel.updateRating(id, req.user.id, role, parseInt(rating), comment);
+            // Get transaction
+            const transaction = await transactionModel.getById(id);
+            if (!transaction) {
+                req.flash('error_msg', 'Giao dịch không tồn tại.');
+                return res.redirect('/transactions/won');
+            }
+
+            // Check permission
+            if (transaction.buyer_id !== userId && transaction.seller_id !== userId) {
+                req.flash('error_msg', 'Bạn không có quyền đánh giá giao dịch này.');
+                return res.redirect('/transactions/won');
+            }
+
+            const role = transaction.buyer_id === userId ? 'buyer' : 'seller';
+            const targetUserId = role === 'buyer' ? transaction.seller_id : transaction.buyer_id;
+
+            // Check if already rated
+            const db = require('../configs/db');
+            const rateCheck = await db.query(
+                'SELECT 1 FROM ratings WHERE transaction_id = $1 AND from_user_id = $2',
+                [id, userId]
+            );
+            if (rateCheck.rows.length > 0) {
+                req.flash('error_msg', 'Bạn đã đánh giá giao dịch này rồi.');
+                return res.redirect(`/transactions/${id}`);
+            }
+
+            // 1. Update rating in transactions table (for compatibility)
+            await transactionModel.updateRating(id, userId, role, ratingInt, comment);
+
+            // 2. Insert rating into ratings table
+            await db.query(
+                'INSERT INTO ratings (transaction_id, from_user_id, to_user_id, score, content) VALUES ($1, $2, $3, $4, $5)',
+                [id, userId, targetUserId, ratingInt, comment]
+            );
+
+            // 3. Update user stats - Calculate from scratch for accuracy
+            const isPositive = ratingInt === 1;
+            if (role === 'buyer') {
+                // Buyer rating seller -> update seller stats
+                // First update counts
+                await db.query(`
+                    UPDATE users 
+                    SET seller_total_ratings_count = seller_total_ratings_count + 1,
+                        seller_positive_ratings_count = seller_positive_ratings_count + ${isPositive ? 1 : 0}
+                    WHERE id = $1
+                `, [targetUserId]);
+                
+                // Then recalculate average from all ratings (where user is rated as seller)
+                const statsRes = await db.query(`
+                    SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN score = 1 THEN 1 ELSE 0 END) as positive
+                    FROM ratings r
+                    JOIN transactions t ON r.transaction_id = t.id
+                    WHERE r.to_user_id = $1 AND t.seller_id = $1
+                `, [targetUserId]);
+                
+                const stats = statsRes.rows[0];
+                const newAverage = stats.total > 0 ? (parseFloat(stats.positive) / parseFloat(stats.total)) : 0;
+                
+                await db.query(`
+                    UPDATE users 
+                    SET seller_average_rating = $1
+                    WHERE id = $2
+                `, [newAverage, targetUserId]);
+            } else {
+                // Seller rating buyer -> update buyer stats
+                // First update counts
+                await db.query(`
+                    UPDATE users 
+                    SET bidder_total_ratings_count = bidder_total_ratings_count + 1,
+                        bidder_positive_ratings_count = bidder_positive_ratings_count + ${isPositive ? 1 : 0}
+                    WHERE id = $1
+                `, [targetUserId]);
+                
+                // Then recalculate average from all ratings (where user is rated as buyer)
+                const statsRes = await db.query(`
+                    SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN score = 1 THEN 1 ELSE 0 END) as positive
+                    FROM ratings r
+                    JOIN transactions t ON r.transaction_id = t.id
+                    WHERE r.to_user_id = $1 AND t.buyer_id = $1
+                `, [targetUserId]);
+                
+                const stats = statsRes.rows[0];
+                const newAverage = stats.total > 0 ? (parseFloat(stats.positive) / parseFloat(stats.total)) : 0;
+                
+                await db.query(`
+                    UPDATE users 
+                    SET bidder_average_rating = $1
+                    WHERE id = $2
+                `, [newAverage, targetUserId]);
+            }
+
             req.flash('success_msg', 'Đã gửi đánh giá.');
             res.redirect(`/transactions/${id}`);
         } catch (error) {
-            next(error);
+            console.error('Error submitting rating:', error);
+            req.flash('error_msg', 'Lỗi khi gửi đánh giá.');
+            res.redirect(`/transactions/${req.params.id}`);
         }
     },
 

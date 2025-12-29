@@ -47,6 +47,11 @@
         color: #fff;
     }
 
+    .status-expired {
+        background: #EF4444;
+        color: #fff;
+    }
+
     .nav-pills .nav-link.active {
         background-color: #F3BA2F;
         color: #000;
@@ -99,7 +104,11 @@
                     {{#if (eq this.status 'SOLD')}}
                     <span class="status-badge status-sold">Đã bán</span>
                     {{else}}
+                    {{#if (eq this.status 'EXPIRED')}}
+                    <span class="status-badge status-expired">Không có người đấu giá</span>
+                    {{else}}
                     <span class="status-badge status-ended">Kết thúc</span>
+                    {{/if}}
                     {{/if}}
                     {{/if}}
                     <span class="text-muted small ms-2"><i class="fas fa-gavel me-1"></i>{{this.bid_count}} lượt

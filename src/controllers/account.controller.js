@@ -52,17 +52,29 @@ module.exports = {
                 ratio: user.seller_average_rating != null ? (user.seller_average_rating * 100).toFixed(0) : null
             };
 
-            // Check seller request status
+            // Check seller request/renewal status
             let showSellerRequest = false;
+            let showSellerRenewal = false;
             let sellerRequestStatus = null;
+            let hasSellerHistory = false;
 
-            // Assuming 'role' column exists and stores 'BIDDER', 'SELLER', 'ADMIN'
-            // If user is BIDDER, they can request upgrade
+            // Check if user has seller history (has been seller before)
+            hasSellerHistory = (user.seller_total_ratings_count || 0) > 0;
+
+            // If user is BIDDER
             if (user.role === 'BIDDER') {
-                showSellerRequest = true;
+                // Lấy request status (nếu có)
                 const latestReq = await bidderRequestModel.getLatestByUserId(userId);
                 if (latestReq) {
                     sellerRequestStatus = latestReq.status;
+                }
+
+                if (hasSellerHistory) {
+                    // User đã từng là seller -> hiển thị gia hạn
+                    showSellerRenewal = true;
+                } else {
+                    // User chưa từng là seller -> hiển thị yêu cầu
+                    showSellerRequest = true;
                 }
             }
 
@@ -73,7 +85,9 @@ module.exports = {
                 sellerRating,
                 activeTab: 'profile',
                 showSellerRequest,
-                sellerRequestStatus
+                showSellerRenewal,
+                sellerRequestStatus,
+                hasSellerHistory
             });
         } catch (error) {
             console.error(error);
@@ -81,26 +95,32 @@ module.exports = {
         }
     },
 
-    // 2. Update Profile (Existing logic)
+    // 2. Update Profile
     async postProfile(req, res) {
-        // ... (Reuse existing logic or import from authController if needed, 
-        // but for now let's assume we keep the update logic here or redirect to authController)
-        // Since the route was pointing to authController, I should probably keep using authController for update
-        // OR move it here. To avoid breaking changes, I will implement it here similar to authController.
         try {
-            const { name, email, address, birthday } = req.body;
+            const { name, address, birthday } = req.body;
             const userId = req.user.id;
 
-            await db.query(
-                'UPDATE users SET name = $1, email = $2, address = $3, birthday = $4 WHERE id = $5',
-                [name, email, address, birthday || null, userId]
-            );
+            // Sử dụng userModel.update() - chỉ update name, address, birthday (KHÔNG update email)
+            const updatedUser = {
+                id: userId,
+                name: name || req.user.name,
+                address: address || null,
+                birthday: birthday || null
+            };
+
+            const user = await userModel.update(updatedUser);
+
+            // Format birthday cho input type="date" nếu có
+            if (user.birthday) {
+                user.birthday = new Date(user.birthday).toISOString().split('T')[0];
+            }
 
             req.flash('success_msg', 'Cập nhật hồ sơ thành công!');
             res.redirect('/account/profile');
         } catch (error) {
-            console.error(error);
-            req.flash('error_msg', 'Lỗi cập nhật hồ sơ.');
+            console.error('Error updating profile:', error);
+            req.flash('error_msg', 'Lỗi cập nhật hồ sơ: ' + (error.message || 'Vui lòng thử lại.'));
             res.redirect('/account/profile');
         }
     },
@@ -139,92 +159,52 @@ module.exports = {
         }
     },
 
-    // 4. Won List (Auctions + Buy Now)
-    async getWon(req, res) {
+
+    // Gia hạn seller (cho user đã từng là seller) - Tạo request chờ admin duyệt
+    async renewSeller(req, res) {
         try {
             const userId = req.user.id;
-            // Get transactions where user is buyer
-            const { rows } = await db.query(`
-                SELECT t.id as transaction_id, t.price, t.created_at,
-                       p.id as product_id, p.name as product_name, p.avatar_url,
-                       s.id as seller_id, s.name as seller_name,
-                       r.id as rating_id
-                FROM transactions t
-                JOIN products p ON t.product_id = p.id
-                JOIN users s ON t.seller_id = s.id
-                LEFT JOIN ratings r ON t.id = r.transaction_id AND r.from_user_id = $1
-                WHERE t.buyer_id = $1
-                ORDER BY t.created_at DESC
+
+            // Kiểm tra user có lịch sử seller không
+            const userRes = await db.query(`
+                SELECT seller_total_ratings_count, role FROM users WHERE id = $1
             `, [userId]);
 
-            const items = rows.map(r => ({
-                transactionId: r.transaction_id,
-                productId: r.product_id,
-                productName: r.product_name,
-                image: r.avatar_url,
-                price: formatMoney(r.price),
-                sellerName: r.seller_name,
-                sellerId: r.seller_id,
-                date: formatAbsolute(r.created_at),
-                isRated: !!r.rating_id
-            }));
+            const user = userRes.rows[0];
+            if (!user) {
+                req.flash('error_msg', 'Không tìm thấy thông tin người dùng.');
+                return res.redirect('/account/profile');
+            }
 
-            res.render('account/won', {
-                items,
-                activeTab: 'won'
-            });
+            // Chỉ cho phép gia hạn nếu:
+            // 1. User đã từng là seller (có lịch sử đánh giá)
+            // 2. Hiện tại là BIDDER
+            if ((user.seller_total_ratings_count || 0) === 0) {
+                req.flash('error_msg', 'Bạn chưa từng là seller. Vui lòng yêu cầu nâng cấp qua admin.');
+                return res.redirect('/account/profile');
+            }
+
+            if (user.role !== 'BIDDER') {
+                req.flash('error_msg', 'Bạn đã là seller hoặc không thể gia hạn.');
+                return res.redirect('/account/profile');
+            }
+
+            // Kiểm tra xem đã có request pending chưa
+            const hasPending = await bidderRequestModel.hasPendingRequest(userId);
+            if (hasPending) {
+                req.flash('error_msg', 'Bạn đã có yêu cầu đang chờ duyệt!');
+                return res.redirect('/account/profile');
+            }
+
+            // Tạo request mới (giống như yêu cầu nâng cấp)
+            await bidderRequestModel.create(userId);
+
+            req.flash('success_msg', 'Đã gửi yêu cầu gia hạn seller! Vui lòng chờ admin duyệt.');
+            res.redirect('/account/profile');
         } catch (error) {
-            console.error(error);
-            res.status(500).render('500');
-        }
-    },
-
-    // 5. Submit Rating
-    async postRating(req, res) {
-        try {
-            const { transactionId, score, content } = req.body;
-            const userId = req.user.id;
-            const scoreInt = parseInt(score, 10);
-
-            if (![-1, 1].includes(scoreInt)) {
-                return res.status(400).json({ success: false, message: 'Điểm đánh giá không hợp lệ.' });
-            }
-
-            // Verify transaction
-            const transRes = await db.query('SELECT * FROM transactions WHERE id = $1 AND buyer_id = $2', [transactionId, userId]);
-            if (!transRes.rows.length) {
-                return res.status(404).json({ success: false, message: 'Giao dịch không tồn tại.' });
-            }
-            const transaction = transRes.rows[0];
-
-            // Check if already rated
-            const rateCheck = await db.query('SELECT 1 FROM ratings WHERE transaction_id = $1 AND from_user_id = $2', [transactionId, userId]);
-            if (rateCheck.rows.length) {
-                return res.status(400).json({ success: false, message: 'Bạn đã đánh giá giao dịch này rồi.' });
-            }
-
-            // Insert rating
-            await db.query(
-                'INSERT INTO ratings (transaction_id, from_user_id, to_user_id, score, content) VALUES ($1, $2, $3, $4, $5)',
-                [transactionId, userId, transaction.seller_id, scoreInt, content]
-            );
-
-            // Update seller stats
-            const isPositive = scoreInt === 1;
-            await db.query(`
-                UPDATE users 
-                SET seller_total_ratings_count = seller_total_ratings_count + 1,
-                    seller_positive_ratings_count = seller_positive_ratings_count + ${isPositive ? 1 : 0},
-                    seller_average_rating = (seller_positive_ratings_count + ${isPositive ? 1 : 0})::float / (seller_total_ratings_count + 1)
-                WHERE id = $1
-            `, [transaction.seller_id]);
-
-            req.flash('success_msg', 'Đánh giá thành công!');
-            res.redirect('/account/won');
-        } catch (error) {
-            console.error(error);
-            req.flash('error_msg', 'Lỗi khi gửi đánh giá.');
-            res.redirect('/account/won');
+            console.error('Error renewing seller:', error);
+            req.flash('error_msg', 'Có lỗi xảy ra khi gia hạn seller.');
+            res.redirect('/account/profile');
         }
     }
 };

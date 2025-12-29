@@ -201,7 +201,8 @@ module.exports = {
     async getSellerProducts(sellerId, status) {
         let statusCondition = "status = 'ACTIVE'";
         if (status === 'completed') {
-            statusCondition = "status IN ('SOLD', 'ENDED')"; // Giả sử SOLD/ENDED là trạng thái kết thúc
+            // Bao gồm cả SOLD (đã bán), EXPIRED (hết hạn không ai đấu), và ENDED (nếu có)
+            statusCondition = "status IN ('SOLD', 'EXPIRED', 'ENDED')";
         }
 
         const sql = `
@@ -232,15 +233,34 @@ module.exports = {
         `;
         const result = await db.query(sql, [transactionId, sellerId, transaction.buyer_id, score, content]);
 
-        // Update buyer stats
+        // Update buyer stats - Calculate from scratch for accuracy
         const isPositive = score === 1;
+        // First update counts
         await db.query(`
             UPDATE users 
             SET bidder_total_ratings_count = bidder_total_ratings_count + 1,
-                bidder_positive_ratings_count = bidder_positive_ratings_count + ${isPositive ? 1 : 0},
-                bidder_average_rating = (bidder_positive_ratings_count + ${isPositive ? 1 : 0})::float / (bidder_total_ratings_count + 1)
+                bidder_positive_ratings_count = bidder_positive_ratings_count + ${isPositive ? 1 : 0}
             WHERE id = $1
         `, [transaction.buyer_id]);
+        
+        // Then recalculate average from all ratings
+        const statsRes = await db.query(`
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN score = 1 THEN 1 ELSE 0 END) as positive
+            FROM ratings r
+            JOIN transactions t ON r.transaction_id = t.id
+            WHERE r.to_user_id = $1 AND t.buyer_id = $1
+        `, [transaction.buyer_id]);
+        
+        const stats = statsRes.rows[0];
+        const newAverage = stats.total > 0 ? (parseFloat(stats.positive) / parseFloat(stats.total)) : 0;
+        
+        await db.query(`
+            UPDATE users 
+            SET bidder_average_rating = $1
+            WHERE id = $2
+        `, [newAverage, transaction.buyer_id]);
 
         return result.rows[0];
     },

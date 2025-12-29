@@ -45,7 +45,8 @@ module.exports = {
 
         // Không có quyền admin
         res.status(403).render('403', {
-            message: 'Bạn không có quyền truy cập trang này!'
+            message: 'Bạn không có quyền truy cập trang này!',
+            layout: false
         });
     }
 };
