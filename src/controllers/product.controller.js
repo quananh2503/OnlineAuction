@@ -139,21 +139,21 @@ async function loadProductDetail(productId, currentUserId) {
     }
 
     const product = productRes.rows[0];
-    
+
     // Seller rating: dùng average_rating đã tính sẵn, hiển thị dạng %
     const sellerRating = {
         stars: product.seller_average_rating != null ? (product.seller_average_rating * 100).toFixed(0) + '%' : 'N/A',
         total: product.seller_total_ratings_count || 0,
         ratio: product.seller_average_rating != null ? (product.seller_average_rating * 100).toFixed(0) : 0
     };
-    
+
     // Bidder rating: dùng average_rating đã tính sẵn, hiển thị dạng %
     const bidderRating = {
         stars: product.bidder_average_rating != null ? (product.bidder_average_rating * 100).toFixed(0) + '%' : 'N/A',
         total: product.bidder_total_ratings_count || 0,
         ratio: product.bidder_average_rating != null ? (product.bidder_average_rating * 100).toFixed(0) : 0
     };
-    
+
     const gallery = imagesRes.rows.length ? imagesRes.rows.map((img) => img.url) : [product.avatar_url];
 
     let description = product.description;
@@ -214,15 +214,20 @@ async function loadProductDetail(productId, currentUserId) {
             suggestedBidFormatted: formatMoney(suggestedBidValue),
             status: product.status,
             sellerId: product.seller_id,
+            winnerId: product.winner_id,
             sellerEmail: product.seller_email,
             seller: {
+                id: product.seller_id,
                 name: product.seller_name,
                 ratingStars: sellerRating.stars,
                 ratingTotal: sellerRating.total,
-                ratingRatio: sellerRating.ratio
+                ratingRatio: sellerRating.ratio,
+                ratingUrl: `/users/${product.seller_id}/ratings`
             },
             highestBidder: product.highest_bidder_name ? {
+                id: product.winner_id,
                 nameMasked: maskName(product.highest_bidder_name),
+                nameFull: product.highest_bidder_name,
                 ratingStars: bidderRating.stars,
                 ratingTotal: bidderRating.total
             } : null,
@@ -307,9 +312,30 @@ async function detailPage(req, res, next) {
         const now = Date.now();
         const ended = now >= new Date(detail.product.endsAtRaw).getTime() || detail.product.status !== 'ACTIVE';
 
+        // Phân quyền hiển thị highestBidder
+        let highestBidderDisplay = detail.product.highestBidder;
+        if (highestBidderDisplay) {
+            if (isSeller) {
+                // Người bán thấy tên đầy đủ và link đánh giá
+                highestBidderDisplay = {
+                    ...highestBidderDisplay,
+                    name: highestBidderDisplay.nameFull,
+                    ratingUrl: `/users/${highestBidderDisplay.id}/ratings`
+                };
+            } else {
+                // Người khác chỉ thấy tên đã mask, không có link
+                highestBidderDisplay = {
+                    ...highestBidderDisplay,
+                    name: highestBidderDisplay.nameMasked,
+                    ratingUrl: null
+                };
+            }
+        }
+
         res.render('products/detail', {
             product: {
                 ...detail.product,
+                highestBidder: highestBidderDisplay,
                 isSeller,
                 canBid: isAuth && !isSeller && !ended,
                 canBuyNow: isAuth && !isSeller && !ended && !!detail.product.buyNowPriceValue,
@@ -509,17 +535,17 @@ async function placeBid(req, res, next) {
             `INSERT INTO bids (product_id, bidder_id, price, status) VALUES ($1, $2, $3, 'ACTIVE')`,
             [productId, req.user.id, bidAmount]
         );
-        
+
         // Auto-extend logic: Nếu product có auto_extend = true, gia hạn thời gian
         if (product.auto_extend) {
             // Lấy cấu hình thời gian gia hạn (mặc định 5 phút)
             const extendMinutesRes = await client.query(
                 `SELECT value FROM system_settings WHERE key = 'auto_extend_minutes'`
             );
-            const extendMinutes = extendMinutesRes.rows.length > 0 
-                ? parseInt(extendMinutesRes.rows[0].value) 
+            const extendMinutes = extendMinutesRes.rows.length > 0
+                ? parseInt(extendMinutesRes.rows[0].value)
                 : 5;
-            
+
             // Cập nhật ends_at = MAX(NOW() + extendMinutes, ends_at hiện tại)
             await client.query(
                 `UPDATE products 
