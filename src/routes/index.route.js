@@ -8,6 +8,7 @@ const adminRouter = require('./admin.route');
 const watchlistRouter = require('./watchlist.route');
 const transactionRouter = require('./transaction.route');
 const sellerRouter = require('./seller.route');
+const userRouter = require('./user.route');
 const productController = require('../controllers/product.controller');
 const homeController = require('../controllers/home.controller');
 
@@ -23,5 +24,6 @@ router.use('/admin', adminRouter);
 router.use('/watchlist', watchlistRouter);
 router.use('/transactions', transactionRouter);
 router.use('/seller', sellerRouter);
+router.use('/users', userRouter);
 
 module.exports = router;

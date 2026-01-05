@@ -108,7 +108,7 @@ async function loadProductDetail(productId, currentUserId) {
         safeQuery(`SELECT url, type FROM images WHERE product_id = $1 ORDER BY (type = 'AVATAR') DESC, id ASC`, [productId]),
         safeQuery(`SELECT content, created_at FROM descriptions WHERE product_id = $1 ORDER BY created_at ASC`, [productId]),
         safeQuery(`
-            SELECT b.id, b.price, b.created_at, u.name
+            SELECT b.id, b.price, b.created_at, b.bidder_id, u.name
             FROM bids b
             JOIN users u ON b.bidder_id = u.id
             WHERE product_id = $1
@@ -235,8 +235,10 @@ async function loadProductDetail(productId, currentUserId) {
         },
         bidHistory: bidsRes.rows.map(b => ({
             id: b.id,
+            bidderId: b.bidder_id,
             time: formatAbsolute(b.created_at),
-            bidder: maskName(b.name),
+            bidderMasked: maskName(b.name),
+            bidderFull: b.name,
             priceFormatted: formatMoney(b.price)
         })),
         questions: questionsRes.rows.map(q => ({
@@ -332,6 +334,25 @@ async function detailPage(req, res, next) {
             }
         }
 
+        // Phân quyền hiển thị bidHistory
+        let bidHistoryDisplay = detail.bidHistory.map(b => {
+            if (isSeller) {
+                // Seller thấy tên đầy đủ + link đánh giá
+                return {
+                    ...b,
+                    bidder: b.bidderFull,
+                    ratingUrl: `/users/${b.bidderId}/ratings`
+                };
+            } else {
+                // User khác chỉ thấy tên masked, không có link
+                return {
+                    ...b,
+                    bidder: b.bidderMasked,
+                    ratingUrl: null
+                };
+            }
+        });
+
         res.render('products/detail', {
             product: {
                 ...detail.product,
@@ -342,7 +363,7 @@ async function detailPage(req, res, next) {
                 watchlisted: detail.watchlisted,
                 endsDisplay: detail.product.showRelative ? detail.product.endsRelative : detail.product.endsAt
             },
-            bidHistory: detail.bidHistory,
+            bidHistory: bidHistoryDisplay,
             questions: detail.questions,
             relatedProducts: detail.relatedProducts,
             isAuth,

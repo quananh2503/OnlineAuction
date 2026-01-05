@@ -242,7 +242,7 @@ module.exports = {
                 bidder_positive_ratings_count = bidder_positive_ratings_count + ${isPositive ? 1 : 0}
             WHERE id = $1
         `, [transaction.buyer_id]);
-        
+
         // Then recalculate average from all ratings
         const statsRes = await db.query(`
             SELECT 
@@ -252,10 +252,10 @@ module.exports = {
             JOIN transactions t ON r.transaction_id = t.id
             WHERE r.to_user_id = $1 AND t.buyer_id = $1
         `, [transaction.buyer_id]);
-        
+
         const stats = statsRes.rows[0];
         const newAverage = stats.total > 0 ? (parseFloat(stats.positive) / parseFloat(stats.total)) : 0;
-        
+
         await db.query(`
             UPDATE users 
             SET bidder_average_rating = $1
@@ -335,6 +335,12 @@ module.exports = {
         `;
         const bidsRes = await db.query(bidsSql, [productId]);
 
+        // Chuẩn hoá bids: seller thấy full name + link đánh giá
+        const bids = bidsRes.rows.map(b => ({
+            ...b,
+            bidder_rating_url: `/users/${b.bidder_id}/ratings`
+        }));
+
         // Lấy danh sách câu hỏi
         const questionsSql = `
             SELECT q.*, u.name as asker_name
@@ -349,6 +355,6 @@ module.exports = {
         const descSql = `SELECT * FROM descriptions WHERE product_id = $1 ORDER BY created_at ASC`;
         const descRes = await db.query(descSql, [productId]);
 
-        return { product, bids: bidsRes.rows, questions: questionsRes.rows, descriptions: descRes.rows };
+        return { product, bids, questions: questionsRes.rows, descriptions: descRes.rows };
     }
 };

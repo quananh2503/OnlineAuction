@@ -583,7 +583,13 @@
                         <tbody>
                             {{#each bidHistory}}
                             <tr>
-                                <td class="ps-3">{{bidder}}</td>
+                                <td class="ps-3">
+                                    {{#if ratingUrl}}
+                                    <a href="{{ratingUrl}}" class="text-decoration-none">{{bidder}}</a>
+                                    {{else}}
+                                    {{bidder}}
+                                    {{/if}}
+                                </td>
                                 <td class="fw-bold text-primary">{{priceFormatted}}</td>
                                 <td class="text-end pe-3 small text-muted">{{time}}</td>
                             </tr>

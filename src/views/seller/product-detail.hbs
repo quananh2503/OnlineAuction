@@ -120,7 +120,15 @@
                             <tbody>
                                 {{#each bids}}
                                 <tr>
-                                    <td>{{maskName this.bidder_name}} (Rating: {{this.rating}})</td>
+                                    <td>
+                                        {{#if this.bidder_rating_url}}
+                                        <a href="{{this.bidder_rating_url}}"
+                                            class="text-decoration-none">{{this.bidder_name}}</a>
+                                        {{else}}
+                                        {{this.bidder_name}}
+                                        {{/if}}
+                                        <div class="small text-muted">Rating: {{this.rating}}</div>
+                                    </td>
                                     <td>{{formatMoney this.price}}</td>
                                     <td>{{formatRelativeTime this.created_at}}</td>
                                     <td>
