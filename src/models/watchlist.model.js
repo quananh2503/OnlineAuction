@@ -39,7 +39,7 @@ module.exports = {
     // Toggle watchlist (thêm nếu chưa có, xóa nếu đã có)
     async toggle(userId, productId) {
         const isWatchlisted = await this.isWatchlisted(userId, productId);
-        
+
         if (isWatchlisted) {
             await this.remove(userId, productId);
             return { action: 'removed', watchlisted: false };
@@ -50,19 +50,34 @@ module.exports = {
     },
 
     // Lấy tất cả watchlist của user
-    async getUserWatchlist(userId) {
-        const sql = `
+    async getUserWatchlist(userId, keyword = '') {
+        const params = [userId];
+        let paramIndex = 2;
+
+        let sql = `
             SELECT 
                 p.id, p.name, p.avatar_url, p.current_price, 
-                p.starting_price, p.ends_at, p.status,
-                c.name as category_name
+                p.starting_price, p.ends_at, p.status, p.bid_count,
+                p.price_step, p.buy_now_price, p.starts_at,
+                c.name as category_name,
+                (SELECT name FROM users WHERE id = (
+                    SELECT bidder_id FROM bids WHERE product_id = p.id ORDER BY price DESC LIMIT 1
+                )) as highest_bidder_name
             FROM watchlists w
             JOIN products p ON w.product_id = p.id
             JOIN categories c ON p.category_id = c.id
             WHERE w.user_id = $1
-            ORDER BY w.product_id DESC
         `;
-        const result = await db.query(sql, [userId]);
+
+        // Thêm điều kiện tìm kiếm nếu có keyword
+        if (keyword && keyword.trim()) {
+            sql += ` AND (to_tsvector('simple', p.name || ' ' || c.name) @@ websearch_to_tsquery('simple', $${paramIndex++}))`;
+            params.push(keyword.trim());
+        }
+
+        sql += ` ORDER BY w.product_id DESC`;
+
+        const result = await db.query(sql, params);
         return result.rows;
     },
 
