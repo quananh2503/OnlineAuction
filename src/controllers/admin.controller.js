@@ -3,6 +3,8 @@ const productModel = require('../models/product.model');
 const bidderRequestModel = require('../models/bidder-request.model');
 const userModel = require('../models/user.model');
 const db = require('../configs/db');
+const mailService = require('../mail/mail.service');
+const bcrypt = require('bcryptjs');
 
 module.exports = {
     // Dashboard - Trang chính admin
@@ -487,6 +489,74 @@ module.exports = {
         } catch (error) {
             console.error('Error unbanning user:', error);
             res.redirect('/admin/users?error=' + encodeURIComponent(error.message));
+        }
+    },
+
+    // Xóa người dùng
+    async deleteUser(req, res, next) {
+        try {
+            const { id } = req.params;
+
+            // Kiểm tra user có tồn tại không
+            const user = await userModel.findById(id);
+            if (!user) {
+                return res.redirect('/admin/users?error=' + encodeURIComponent('Không tìm thấy người dùng!'));
+            }
+
+            // Không cho phép xóa chính mình
+            if (req.user && req.user.id == id) {
+                return res.redirect('/admin/users?error=' + encodeURIComponent('Không thể xóa tài khoản của chính bạn!'));
+            }
+
+            // Xóa user
+            await userModel.deleteUser(id);
+
+            res.redirect('/admin/users?success=' + encodeURIComponent('Đã xóa người dùng thành công!'));
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            
+            // Kiểm tra lỗi foreign key constraint
+            if (error.code === '23503') {
+                return res.redirect('/admin/users?error=' + encodeURIComponent('Không thể xóa người dùng này do còn dữ liệu liên quan (sản phẩm, giao dịch, ...)'));
+            }
+            
+            res.redirect('/admin/users?error=' + encodeURIComponent(error.message));
+        }
+    },
+
+    // Reset mật khẩu người dùng
+    async resetUserPassword(req, res, next) {
+        try {
+            const { id } = req.params;
+
+            // Tìm user
+            const user = await userModel.findById(id);
+            if (!user) {
+                return res.redirect('/admin/users?error=' + encodeURIComponent('Không tìm thấy người dùng!'));
+            }
+
+            // Tạo mật khẩu mới ngẫu nhiên (8 ký tự)
+            const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2).toUpperCase();
+            
+            // Hash mật khẩu
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // Cập nhật mật khẩu trong database
+            await userModel.resetPassword(id, hashedPassword);
+
+            // Gửi email thông báo cho user
+            const loginUrl = `${req.protocol}://${req.get('host')}/auth/login`;
+            await mailService.sendPasswordResetEmail({
+                to: user.email,
+                userName: user.name,
+                newPassword: newPassword,
+                loginUrl: loginUrl
+            });
+
+            res.redirect('/admin/users?success=' + encodeURIComponent('Đã reset mật khẩu và gửi email thông báo thành công!'));
+        } catch (error) {
+            console.error('Error resetting user password:', error);
+            res.redirect('/admin/users?error=' + encodeURIComponent('Có lỗi xảy ra khi reset mật khẩu: ' + error.message));
         }
     },
 

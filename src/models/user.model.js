@@ -124,5 +124,28 @@ module.exports = {
         }
         const result = await db.query(sql, [userId, role]);
         return result.rows[0];
+    },
+
+    // Xóa người dùng
+    async deleteUser(userId) {
+        const sql = `
+            DELETE FROM users
+            WHERE id = $1
+            RETURNING *;
+        `;
+        const result = await db.query(sql, [userId]);
+        return result.rows[0];
+    },
+
+    // Reset mật khẩu người dùng - Tạo mật khẩu mới ngẫu nhiên
+    async resetPassword(userId, newPassword) {
+        const sql = `
+            UPDATE users
+            SET password = $2
+            WHERE id = $1
+            RETURNING *;
+        `;
+        const result = await db.query(sql, [userId, newPassword]);
+        return result.rows[0];
     }
 };

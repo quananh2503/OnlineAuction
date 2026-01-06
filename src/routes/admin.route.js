@@ -23,6 +23,8 @@ router.post('/products/:id/remove', adminController.removeProduct);
 router.get('/users', adminController.listUsers);
 router.post('/users/:id/ban', adminController.banUser);
 router.post('/users/:id/unban', adminController.unbanUser);
+router.post('/users/:id/delete', adminController.deleteUser);
+router.post('/users/:id/reset-password', adminController.resetUserPassword);
 
 // Bidder Requests Management
 router.get('/bidder-requests', adminController.listBidderRequests);

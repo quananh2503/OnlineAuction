@@ -90,19 +90,33 @@
                         </td>
                         <td>{{this.createdAt}}</td>
                         <td>
-                            {{#if (eq this.status 'ACTIVE')}}
-                            <form action="/admin/users/{{this.id}}/ban" method="POST" style="display: inline;">
-                                <button class="btn btn-sm btn-warning" onclick="return confirm('Khóa tài khoản {{this.name}}?')">
-                                    <i class="fas fa-ban"></i> Khóa
-                                </button>
-                            </form>
-                            {{else if (eq this.status 'BANNED')}}
-                            <form action="/admin/users/{{this.id}}/unban" method="POST" style="display: inline;">
-                                <button class="btn btn-sm btn-success" onclick="return confirm('Mở khóa tài khoản {{this.name}}?')">
-                                    <i class="fas fa-unlock"></i> Mở khóa
-                                </button>
-                            </form>
-                            {{/if}}
+                            <div class="btn-group" role="group">
+                                {{#if (eq this.status 'ACTIVE')}}
+                                <form action="/admin/users/{{this.id}}/ban" method="POST" style="display: inline;">
+                                    <button class="btn btn-sm btn-warning" onclick="return confirm('Khóa tài khoản {{this.name}}?')" title="Khóa tài khoản">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </form>
+                                {{else if (eq this.status 'BANNED')}}
+                                <form action="/admin/users/{{this.id}}/unban" method="POST" style="display: inline;">
+                                    <button class="btn btn-sm btn-success" onclick="return confirm('Mở khóa tài khoản {{this.name}}?')" title="Mở khóa">
+                                        <i class="fas fa-unlock"></i>
+                                    </button>
+                                </form>
+                                {{/if}}
+                                
+                                <form action="/admin/users/{{this.id}}/reset-password" method="POST" style="display: inline;">
+                                    <button class="btn btn-sm btn-info" onclick="return confirm('Reset mật khẩu cho {{this.name}}? Email sẽ được gửi tới người dùng.')" title="Reset mật khẩu">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                </form>
+                                
+                                <form action="/admin/users/{{this.id}}/delete" method="POST" style="display: inline;">
+                                    <button class="btn btn-sm btn-danger" onclick="return confirm('XÓA VĨNH VIỄN tài khoản {{this.name}}? Hành động này không thể hoàn tác!')" title="Xóa người dùng">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {{else}}

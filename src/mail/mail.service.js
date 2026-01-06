@@ -173,6 +173,16 @@ const sendBuyNowNotification = async ({ sellerEmail, buyerEmail, productName, pr
     }
 };
 
+// 9. Password Reset Notification
+const sendPasswordResetEmail = async ({ to, userName, newPassword, loginUrl }) => {
+    await sendMail({
+        to,
+        subject: 'Mật khẩu của bạn đã được reset',
+        template: 'password_reset',
+        data: { userName, newPassword, loginUrl }
+    });
+};
+
 module.exports = {
     sendMail,
     sendBidSuccessEmail,
@@ -182,5 +192,6 @@ module.exports = {
     sendNewQuestionEmail,
     sendAnswerEmail,
     sendVerificationEmail,
-    sendBuyNowNotification
+    sendBuyNowNotification,
+    sendPasswordResetEmail
 };
