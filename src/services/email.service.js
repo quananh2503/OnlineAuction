@@ -9,4 +9,5 @@ module.exports = {
     sendQuestionNotification: mailService.sendNewQuestionEmail,
     sendAnswerNotification: mailService.sendAnswerEmail,
     sendAuctionWonNotification: mailService.sendAuctionEndedWinnerEmail,
+    sendDescriptionUpdateNotification: mailService.sendDescriptionUpdatedEmail,
 };

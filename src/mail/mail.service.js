@@ -173,6 +173,17 @@ const sendBuyNowNotification = async ({ sellerEmail, buyerEmail, productName, pr
     }
 };
 
+// 9. Description Updated Notification
+const sendDescriptionUpdatedEmail = async ({ toList, productName, newDescription, productUrl }) => {
+    if (!toList || toList.length === 0) return;
+    await sendMail({
+        bcc: toList,
+        subject: `Mô tả sản phẩm đã được cập nhật - ${productName}`,
+        template: 'description_updated',
+        data: { productName, newDescription, productUrl }
+    });
+};
+
 module.exports = {
     sendMail,
     sendBidSuccessEmail,
@@ -182,5 +193,6 @@ module.exports = {
     sendNewQuestionEmail,
     sendAnswerEmail,
     sendVerificationEmail,
-    sendBuyNowNotification
+    sendBuyNowNotification,
+    sendDescriptionUpdatedEmail
 };

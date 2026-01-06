@@ -269,9 +269,27 @@ async function listProducts(req, res, next) {
         const categoryId = req.query.category;
         const sort = req.query.sort || 'end_desc';
 
+        // Advanced search parameters
+        const minPrice = req.query.minPrice;
+        const maxPrice = req.query.maxPrice;
+        const status = req.query.status; // 'ACTIVE', 'ENDED', 'SOLD', etc. or array
+        const sellerId = req.query.sellerId;
+
+        const filterParams = {
+            keyword,
+            categoryId,
+            sort,
+            limit,
+            offset,
+            minPrice,
+            maxPrice,
+            status,
+            sellerId
+        };
+
         const [products, totalProducts, categories, watchlistIds] = await Promise.all([
-            productModel.filter({ keyword, categoryId, sort, limit, offset }),
-            productModel.count({ keyword, categoryId }),
+            productModel.filter(filterParams),
+            productModel.count(filterParams),
             categoriesModel.getTree(),
             fetchWatchlistIds(req.user?.id)
         ]);

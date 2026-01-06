@@ -75,7 +75,7 @@ module.exports = {
         const result = await db.query(sql, [limit]);
         return result.rows;
     },
-    async filter({ keyword, categoryId, sort, limit, offset }) {
+    async filter({ keyword, categoryId, sort, limit, offset, minPrice, maxPrice, status, sellerId }) {
         const params = [];
         let paramIndex = 1;
 
@@ -89,8 +89,23 @@ module.exports = {
             FROM products p
             JOIN users u ON p.seller_id = u.id
             JOIN categories c ON p.category_id = c.id
-            WHERE p.status = 'ACTIVE'
+            WHERE 1=1
         `;
+
+        // Status filter
+        if (status) {
+            if (Array.isArray(status)) {
+                const placeholders = status.map(() => `$${paramIndex++}`).join(',');
+                sql += ` AND p.status IN (${placeholders})`;
+                params.push(...status);
+            } else {
+                sql += ` AND p.status = $${paramIndex++}`;
+                params.push(status);
+            }
+        } else {
+            // Default: only active products
+            sql += ` AND p.status = 'ACTIVE'`;
+        }
 
         if (keyword) {
             // Full-text search on product name and category name
@@ -102,6 +117,23 @@ module.exports = {
             sql += ` AND (p.category_id = $${paramIndex} OR p.category_id IN (SELECT id FROM categories WHERE parent_id = $${paramIndex}))`;
             paramIndex++;
             params.push(categoryId);
+        }
+
+        // Price range filter
+        if (minPrice !== undefined && minPrice !== null && minPrice !== '') {
+            sql += ` AND p.current_price >= $${paramIndex++}`;
+            params.push(Number(minPrice));
+        }
+
+        if (maxPrice !== undefined && maxPrice !== null && maxPrice !== '') {
+            sql += ` AND p.current_price <= $${paramIndex++}`;
+            params.push(Number(maxPrice));
+        }
+
+        // Seller filter
+        if (sellerId) {
+            sql += ` AND p.seller_id = $${paramIndex++}`;
+            params.push(Number(sellerId));
         }
 
         // Sorting
@@ -131,7 +163,7 @@ module.exports = {
         return result.rows;
     },
 
-    async count({ keyword, categoryId }) {
+    async count({ keyword, categoryId, minPrice, maxPrice, status, sellerId }) {
         const params = [];
         let paramIndex = 1;
 
@@ -139,8 +171,22 @@ module.exports = {
             SELECT COUNT(*) as total
             FROM products p
             JOIN categories c ON p.category_id = c.id
-            WHERE p.status = 'ACTIVE'
+            WHERE 1=1
         `;
+
+        // Status filter
+        if (status) {
+            if (Array.isArray(status)) {
+                const placeholders = status.map(() => `$${paramIndex++}`).join(',');
+                sql += ` AND p.status IN (${placeholders})`;
+                params.push(...status);
+            } else {
+                sql += ` AND p.status = $${paramIndex++}`;
+                params.push(status);
+            }
+        } else {
+            sql += ` AND p.status = 'ACTIVE'`;
+        }
 
         if (keyword) {
             sql += ` AND (to_tsvector('simple', p.name || ' ' || c.name) @@ websearch_to_tsquery('simple', $${paramIndex++}))`;
@@ -151,6 +197,21 @@ module.exports = {
             sql += ` AND (p.category_id = $${paramIndex} OR p.category_id IN (SELECT id FROM categories WHERE parent_id = $${paramIndex}))`;
             paramIndex++;
             params.push(categoryId);
+        }
+
+        if (minPrice !== undefined && minPrice !== null && minPrice !== '') {
+            sql += ` AND p.current_price >= $${paramIndex++}`;
+            params.push(Number(minPrice));
+        }
+
+        if (maxPrice !== undefined && maxPrice !== null && maxPrice !== '') {
+            sql += ` AND p.current_price <= $${paramIndex++}`;
+            params.push(Number(maxPrice));
+        }
+
+        if (sellerId) {
+            sql += ` AND p.seller_id = $${paramIndex++}`;
+            params.push(Number(sellerId));
         }
 
         const result = await db.query(sql, params);

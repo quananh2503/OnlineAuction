@@ -1,5 +1,5 @@
 const db = require('../configs/db');
-const { sendBidRejectedNotification, sendAnswerNotification } = require('./email.service');
+const { sendBidRejectedNotification, sendAnswerNotification, sendDescriptionUpdateNotification } = require('./email.service');
 const BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
 
 module.exports = {
@@ -62,6 +62,31 @@ module.exports = {
     async appendDescription(productId, content) {
         const sql = `INSERT INTO descriptions (product_id, content, created_at) VALUES ($1, $2, NOW()) RETURNING *`;
         const result = await db.query(sql, [productId, content]);
+
+        // Get product name for email
+        const productRes = await db.query('SELECT name FROM products WHERE id = $1', [productId]);
+        const productName = productRes.rows[0]?.name;
+
+        // Get all bidders' emails to notify
+        const biddersRes = await db.query(`
+            SELECT DISTINCT u.email 
+            FROM bids b 
+            JOIN users u ON b.bidder_id = u.id 
+            WHERE b.product_id = $1 AND b.status = 'ACTIVE'
+        `, [productId]);
+
+        const bidderEmails = biddersRes.rows.map(r => r.email);
+
+        // Send email notification to all bidders
+        if (bidderEmails.length > 0 && productName) {
+            sendDescriptionUpdateNotification({
+                toList: bidderEmails,
+                productName: productName,
+                newDescription: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
+                productUrl: `${BASE_URL}/products/${productId}`
+            }).catch(console.error);
+        }
+
         return result.rows[0];
     },
 
